@@ -1,22 +1,40 @@
 {
   "expo": {
-    "name": "frontend",
-    "slug": "frontend",
+    "name": "RideVE",
+    "slug": "rideve",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "frontend",
-    "userInterfaceStyle": "automatic",
+    "scheme": "rideve",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.rideve.app",
+      "config": {
+        "googleMapsApiKey": "AIzaSyBzsybeLDdXmxiF4jYbt3zYa5N8x1xtKKQ"
+      },
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Mostrar tu ubicación y conductores cercanos",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Compartir tu ubicación durante el viaje"
+      }
     },
     "android": {
+      "package": "com.rideve.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#000"
+        "backgroundColor": "#0B0C10"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyBzsybeLDdXmxiF4jYbt3zYa5N8x1xtKKQ"
+        }
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -25,13 +43,20 @@
     },
     "plugins": [
       "expo-router",
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Permite a RideVE acceder a tu ubicación."
+        }
+      ],
       [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#000"
+          "backgroundColor": "#0B0C10"
         }
       ]
     ],

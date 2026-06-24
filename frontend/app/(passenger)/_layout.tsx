@@ -1,0 +1,30 @@
+import { Tabs } from "expo-router";
+import { Home, Wallet, ClipboardList, User } from "lucide-react-native";
+import { colors, fonts } from "@/src/lib/theme";
+
+export default function PassengerLayout() {
+  return (
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+          borderTopWidth: 1,
+          height: 78,
+          paddingTop: 8,
+          paddingBottom: 22,
+        },
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textMuted,
+        tabBarLabelStyle: { fontFamily: fonts.bodyMedium, fontSize: 11 },
+        sceneStyle: { backgroundColor: colors.bg },
+      }}
+    >
+      <Tabs.Screen name="index" options={{ title: "Inicio", tabBarIcon: ({ color }) => <Home size={22} color={color} /> }} />
+      <Tabs.Screen name="trips" options={{ title: "Viajes", tabBarIcon: ({ color }) => <ClipboardList size={22} color={color} /> }} />
+      <Tabs.Screen name="wallet" options={{ title: "Wallet", tabBarIcon: ({ color }) => <Wallet size={22} color={color} /> }} />
+      <Tabs.Screen name="profile" options={{ title: "Perfil", tabBarIcon: ({ color }) => <User size={22} color={color} /> }} />
+    </Tabs>
+  );
+}

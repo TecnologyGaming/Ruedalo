@@ -1,33 +1,60 @@
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
-import { LogBox } from "react-native";
+import * as Font from "expo-font";
+import { useEffect, useState } from "react";
+import { LogBox, View } from "react-native";
+import { KeyboardProvider } from "react-native-keyboard-controller";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { StatusBar } from "expo-status-bar";
 
 import { useIconFonts } from "@/src/hooks/use-icon-fonts";
+import { AuthProvider } from "@/src/lib/auth";
+import { ToastHost } from "@/src/components/Toast";
+import { colors } from "@/src/lib/theme";
 
+LogBox.ignoreAllLogs(true);
 
-// Disable logbox errors etc so that users can see the app
-// and agent works as expected.
-LogBox.ignoreAllLogs(true)
-
-// Keep the native splash visible from cold start until icon fonts register.
-// Required because @expo/vector-icons' componentDidMount fallback fires
-// Font.loadAsync against a broken vendor path if any <Icon> mounts before
-// the family is registered — which throws on Android Expo Go.
 SplashScreen.preventAutoHideAsync();
 
+const FONT_URLS: Record<string, string> = {
+  Outfit: "https://fonts.gstatic.com/s/outfit/v11/QGYvz_MVcBeNP4NJrktqe5pcSCk.ttf",
+  "Outfit-Bold": "https://fonts.gstatic.com/s/outfit/v11/QGYvz_MVcBeNP4NJLktqe5pcSCk.ttf",
+  DMSans: "https://fonts.gstatic.com/s/dmsans/v15/rP2tp2ywxg089UriI5-g4vlH9VoD8CmcqZG40F9JadbnoEwAop9wzg.ttf",
+  "DMSans-Medium": "https://fonts.gstatic.com/s/dmsans/v15/rP2tp2ywxg089UriI5-g4vlH9VoD8CmcqZG40F9JadbnoEwApJlwzg.ttf",
+  "DMSans-Bold": "https://fonts.gstatic.com/s/dmsans/v15/rP2tp2ywxg089UriI5-g4vlH9VoD8CmcqZG40F9JadbnoEwAoJ5wzg.ttf",
+};
+
 export default function RootLayout() {
-  const [loaded, error] = useIconFonts();
+  const [iconsLoaded, iconErr] = useIconFonts();
+  const [appFontsLoaded, setAppFontsLoaded] = useState(false);
 
   useEffect(() => {
-    if (loaded || error) {
-      SplashScreen.hideAsync();
+    // non-blocking font load; if it fails, system fallback is used
+    Font.loadAsync(FONT_URLS).catch(() => {}).finally(() => setAppFontsLoaded(true));
+  }, []);
+
+  useEffect(() => {
+    if ((iconsLoaded || iconErr) && appFontsLoaded) {
+      SplashScreen.hideAsync().catch(() => {});
     }
-  }, [loaded, error]);
+  }, [iconsLoaded, iconErr, appFontsLoaded]);
 
-  // If the CDN is unreachable we fall through on error rather than wedging
-  // the app — icons will tofu, but the app still boots.
-  if (!loaded && !error) return null;
+  if (!iconsLoaded && !iconErr) return null;
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg }}>
+      <SafeAreaProvider>
+        <KeyboardProvider>
+          <AuthProvider>
+            <StatusBar style="light" />
+            <View style={{ flex: 1, backgroundColor: colors.bg }}>
+              <Stack screenOptions={{ headerShown: false, animation: "fade", contentStyle: { backgroundColor: colors.bg } }} />
+              <ToastHost />
+            </View>
+          </AuthProvider>
+        </KeyboardProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
+  );
 }
