@@ -1,0 +1,155 @@
+{
+  "app_context": {
+    "domain": "Ride-hailing & Wallet",
+    "market": "Venezuela",
+    "language": "es-VE",
+    "currency": "Bs / USD",
+    "target_audience": "Pasajeros, Conductores, Administradores",
+    "theme": "Dark",
+    "archetype": "Archetype 7 (Electric & Neon) - Custom Vibrant Variant",
+    "design_philosophy": "Vibrant, unique, and highly energetic to stand out in the Venezuelan market. Completely avoids the standard colors used by competitors like Ridery (Yellow/Black), Yummy (Red), and inDrive (Green). Focuses on high-contrast neon accents on a deep dark void base."
+  },
+  "colors": {
+    "background_base": "#0B0C10",
+    "background_surface": "#14151F",
+    "background_elevated": "#1F2133",
+    "primary": "#FF007F",
+    "primary_hover": "#D6006B",
+    "secondary": "#00E5FF",
+    "secondary_hover": "#00B8CC",
+    "tertiary": "#8A2BE2",
+    "success": "#00E5FF",
+    "warning": "#FFB800",
+    "danger": "#FF2A55",
+    "text_primary": "#FFFFFF",
+    "text_secondary": "#A0A4B8",
+    "border_subtle": "#2A2D43",
+    "border_focus": "#00E5FF",
+    "map_route": "#FF007F",
+    "map_water": "#0B0C10",
+    "map_land": "#14151F",
+    "map_roads": "#1F2133"
+  },
+  "typography": {
+    "primary_font": "Outfit",
+    "primary_font_fallback": "sans-serif",
+    "secondary_font": "DM Sans",
+    "secondary_font_fallback": "sans-serif",
+    "monospace_font": "JetBrains Mono",
+    "scales": {
+      "h1": "text-4xl font-bold tracking-tight",
+      "h2": "text-3xl font-bold tracking-tight",
+      "h3": "text-2xl font-semibold tracking-tight",
+      "h4": "text-xl font-medium",
+      "body": "text-base font-normal leading-relaxed",
+      "body_small": "text-sm font-normal text-text_secondary",
+      "label": "text-xs font-semibold tracking-widest uppercase",
+      "price_display": "text-5xl font-black tracking-tighter text-secondary"
+    },
+    "rules": [
+      "NEVER use Inter, Roboto, Arial, or generic system fonts for headings.",
+      "Use Outfit for all headings (H1-H4) and numerical displays.",
+      "Use DM Sans for body text, chat messages, and long descriptions.",
+      "Use JetBrains Mono or similar monospace font for Pago Movil reference numbers and IDs."
+    ]
+  },
+  "spacing_and_layout": {
+    "container_padding": "p-6",
+    "bottom_sheet_padding": "p-6 pb-10",
+    "gap_small": "gap-2",
+    "gap_medium": "gap-4",
+    "gap_large": "gap-6",
+    "border_radius": {
+      "button": "rounded-full",
+      "card": "rounded-3xl",
+      "bottom_sheet": "rounded-t-3xl",
+      "input": "rounded-2xl",
+      "avatar": "rounded-full"
+    },
+    "shadows": {
+      "neon_primary": "shadow-[0_0_15px_rgba(255,0,127,0.4)]",
+      "neon_secondary": "shadow-[0_0_15px_rgba(0,229,255,0.4)]",
+      "elevated": "shadow-xl shadow-black/50"
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-primary text-white rounded-full py-4 px-6 font-bold text-lg text-center flex items-center justify-center neon_primary transition-all active:scale-95",
+      "secondary": "bg-transparent border-2 border-secondary text-secondary rounded-full py-4 px-6 font-bold text-lg text-center flex items-center justify-center transition-all active:scale-95",
+      "ghost": "bg-transparent text-text_secondary rounded-full py-3 px-4 font-medium text-center flex items-center justify-center active:bg-background_elevated"
+    },
+    "inputs": {
+      "default": "bg-background_elevated text-white rounded-2xl p-4 text-base placeholder:text-text_secondary border border-transparent focus:border-secondary focus:neon_secondary transition-all outline-none",
+      "search_destination": "bg-background_surface text-white rounded-2xl p-4 text-lg border border-border_subtle shadow-lg flex items-center gap-3"
+    },
+    "bottom_sheet": {
+      "wrapper": "bg-background_surface rounded-t-3xl border-t border-border_subtle shadow-[0_-10px_40px_rgba(0,0,0,0.8)]",
+      "handle": "w-12 h-1.5 bg-border_subtle rounded-full mx-auto my-3"
+    },
+    "wallet_card": {
+      "wrapper": "bg-gradient-to-br from-background_elevated to-background_base border border-secondary/30 rounded-3xl p-6 relative overflow-hidden neon_secondary",
+      "balance_text": "text-secondary font-black text-5xl font-outfit"
+    },
+    "map_pins": {
+      "user_location": "bg-secondary rounded-full w-6 h-6 border-4 border-background_base neon_secondary",
+      "driver_car": "bg-primary rounded-full w-8 h-8 flex items-center justify-center border-2 border-background_base neon_primary",
+      "destination": "bg-white text-background_base rounded-full w-8 h-8 flex items-center justify-center font-bold"
+    }
+  },
+  "screens_and_flows": {
+    "onboarding": {
+      "layout": "Full screen background image with dark gradient overlay (bg-black/70). Logo at top, Role selector (Pasajero / Conductor) in center, Auth buttons at bottom.",
+      "test_ids": ["role-passenger-btn", "role-driver-btn", "login-email-input", "login-submit-btn"]
+    },
+    "passenger_home": {
+      "layout": "Full screen map. Floating search bar at top. Floating recent destinations. Bottom Sheet for ride configuration.",
+      "test_ids": ["search-destination-input", "confirm-ride-btn", "cancel-ride-btn"]
+    },
+    "ride_confirmation": {
+      "layout": "Bottom sheet active. Shows map route. Displays estimated price (Bs/USD) in massive secondary color text. Driver details and car info.",
+      "test_ids": ["estimated-price-text", "request-driver-btn"]
+    },
+    "wallet_pago_movil": {
+      "layout": "Wallet tab. Top section shows neon wallet card. Bottom section shows 'Recargar'. Recargar flow opens a modal with Bank, ID (Cedula), Phone, Reference Input, and Amount.",
+      "test_ids": ["wallet-balance", "recharge-btn", "pago-movil-ref-input", "pago-movil-submit"]
+    },
+    "driver_home": {
+      "layout": "Map view. Large 'Conectarse' / 'Go Online' floating button. When active, incoming ride request pops up as an elevated modal with countdown.",
+      "test_ids": ["go-online-btn", "accept-ride-btn", "reject-ride-btn"]
+    },
+    "admin_dashboard": {
+      "layout": "List layout (no map needed). Tabs for 'Recargas Pendientes', 'Usuarios', 'Viajes Activos'. Details view for manual Pago Movil verification.",
+      "test_ids": ["admin-tab-recharges", "approve-recharge-btn", "reject-recharge-btn"]
+    }
+  },
+  "motion_and_interactions": {
+    "map": "Smooth camera flying animation when searching destination. Pulse animation on user location pin.",
+    "bottom_sheet": "Spring physics for dragging up/down.",
+    "buttons": "Micro-interaction scale down (0.95) on press.",
+    "toasts": "Slide in from top, neon borders depending on success/error."
+  },
+  "media_and_assets": {
+    "icons": "Use lucide-react-native or @expo/vector-icons (Feather/Ionicons). Stick to minimalist line icons.",
+    "image_urls": [
+      {
+        "category": "onboarding_background",
+        "url": "https://images.pexels.com/photos/4148187/pexels-photo-4148187.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "Aerial view of Caracas cityscape at dusk to be used with a heavy dark overlay for the login screen."
+      },
+      {
+        "category": "map_texture_inspiration",
+        "url": "https://images.pexels.com/photos/6940564/pexels-photo-6940564.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "Neon projection on dark background, use this color dynamic (Cyan/Magenta) for map routing lines."
+      }
+    ]
+  },
+  "instructions_to_main_agent": [
+    "CRITICAL: This is an Expo/React Native app using .js files. Do not use pure HTML tags like <div> or <span>. Use <View>, <Text>, <TouchableOpacity>.",
+    "Use NativeWind for Tailwind styling if configured, or map these tailwind classes to StyleSheet.",
+    "All interactive elements MUST have the specified 'data-testid' mapped to the 'testID' prop in React Native.",
+    "Avoid using Shadcn Web components. Use React Native primitives or Expo libraries (@gorhom/bottom-sheet for sheets, react-native-maps for maps).",
+    "Implement the dark map style using react-native-maps customMapStyle prop, removing default POIs and coloring roads #1F2133 and water #0B0C10.",
+    "For the Pago Movil flow, ensure the inputs clearly indicate Venezuelan format (e.g., V- / J- prefix for ID, 0414/0424 for phone).",
+    "Keep the aesthetic purely Dark Mode with Neon accents (Magenta #FF007F and Cyan #00E5FF). Do not introduce white backgrounds for surfaces."
+  ]
+}
