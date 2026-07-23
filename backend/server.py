@@ -74,6 +74,8 @@ class RegisterIn(BaseModel):
     name: str
     phone: str
     role: Literal["passenger", "driver"] = "passenger"
+    cedula: Optional[str] = None
+    cedula_photo: Optional[str] = None
 
 class LoginIn(BaseModel):
     email: EmailStr
@@ -90,6 +92,29 @@ class UserOut(BaseModel):
     lat: Optional[float] = None
     lng: Optional[float] = None
     rating_avg: float = 5.0
+    cedula: Optional[str] = None
+    cedula_photo: Optional[str] = None
+    is_verified: bool = False
+    vehicle_model: Optional[str] = None
+    vehicle_year: Optional[str] = None
+    plate: Optional[str] = None
+    driver_status: Optional[str] = "none"
+    profile_pic: Optional[str] = None
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_phone: Optional[str] = None
+
+class ProfileUpdateIn(BaseModel):
+    cedula: Optional[str] = None
+    cedula_photo: Optional[str] = None
+    profile_pic: Optional[str] = None
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_phone: Optional[str] = None
+
+class DriverRegisterIn(BaseModel):
+    vehicle_model: str
+    vehicle_year: str
+    plate: str
+    license_photo: Optional[str] = None
 
 class TokenOut(BaseModel):
     access_token: str
@@ -222,6 +247,16 @@ def user_to_out(u: dict) -> UserOut:
         lat=u.get("lat"),
         lng=u.get("lng"),
         rating_avg=float(u.get("rating_avg", 5.0)),
+        cedula=u.get("cedula"),
+        cedula_photo=u.get("cedula_photo"),
+        is_verified=bool(u.get("is_verified", False)),
+        vehicle_model=u.get("vehicle_model"),
+        vehicle_year=u.get("vehicle_year"),
+        plate=u.get("plate"),
+        driver_status=u.get("driver_status", "none"),
+        profile_pic=u.get("profile_pic"),
+        emergency_contact_name=u.get("emergency_contact_name"),
+        emergency_contact_phone=u.get("emergency_contact_phone"),
     )
 
 async def get_current_user(token: Optional[str] = Depends(oauth2_scheme)) -> dict:
@@ -387,6 +422,16 @@ async def register(body: RegisterIn):
         "wallet_balance": 0.0,
         "is_online": False,
         "rating_avg": 5.0,
+        "cedula": body.cedula,
+        "cedula_photo": body.cedula_photo,
+        "is_verified": bool(body.cedula is not None),
+        "vehicle_model": None,
+        "vehicle_year": None,
+        "plate": None,
+        "driver_status": "none",
+        "profile_pic": None,
+        "emergency_contact_name": None,
+        "emergency_contact_phone": None,
         "created_at": utcnow_iso(),
     }
     await users_col.insert_one(doc)
@@ -405,6 +450,52 @@ async def login(body: LoginIn):
 @api.get("/auth/me", response_model=UserOut)
 async def me(user=Depends(get_current_user)):
     return user_to_out(user)
+
+@api.post("/users/update_profile", response_model=UserOut)
+async def update_profile(body: ProfileUpdateIn, user=Depends(get_current_user)):
+    upd = {}
+    if body.cedula is not None:
+        upd["cedula"] = body.cedula
+        upd["is_verified"] = True
+    if body.cedula_photo is not None:
+        upd["cedula_photo"] = body.cedula_photo
+    if body.profile_pic is not None:
+        upd["profile_pic"] = body.profile_pic
+    if body.emergency_contact_name is not None:
+        upd["emergency_contact_name"] = body.emergency_contact_name
+    if body.emergency_contact_phone is not None:
+        upd["emergency_contact_phone"] = body.emergency_contact_phone
+    
+    if upd:
+        await users_col.update_one({"id": user["id"]}, {"$set": upd})
+    
+    updated_user = await users_col.find_one({"id": user["id"]}, {"_id": 0})
+    return user_to_out(updated_user)
+
+@api.post("/users/register_driver", response_model=UserOut)
+async def register_driver(body: DriverRegisterIn, user=Depends(get_current_user)):
+    upd = {
+        "vehicle_model": body.vehicle_model,
+        "vehicle_year": body.vehicle_year,
+        "plate": body.plate,
+        "driver_status": "pending",  # awaiting admin approval
+    }
+    await users_col.update_one({"id": user["id"]}, {"$set": upd})
+    updated_user = await users_col.find_one({"id": user["id"]}, {"_id": 0})
+    return user_to_out(updated_user)
+
+@api.post("/users/switch_role", response_model=UserOut)
+async def switch_role(user=Depends(get_current_user)):
+    if user["role"] == "driver":
+        await users_col.update_one({"id": user["id"]}, {"$set": {"role": "passenger"}})
+    elif user["role"] == "passenger":
+        if user.get("driver_status") == "approved":
+            await users_col.update_one({"id": user["id"]}, {"$set": {"role": "driver"}})
+        else:
+            raise HTTPException(status_code=400, detail="Tu solicitud de conductor aún no ha sido aprobada.")
+    
+    updated_user = await users_col.find_one({"id": user["id"]}, {"_id": 0})
+    return user_to_out(updated_user)
 
 # ============================================================
 # Wallet
@@ -812,6 +903,33 @@ async def admin_stats(_=Depends(require_roles("admin"))):
         "completed_rides": completed_rides,
         "pending_recharges": pending_recharges,
     }
+
+@api.get("/admin/drivers/pending")
+async def admin_pending_drivers(_=Depends(require_roles("admin"))):
+    items = await users_col.find({"driver_status": "pending"}, {"_id": 0, "password_hash": 0}).to_list(100)
+    return items
+
+@api.post("/admin/drivers/{driver_id}/approve")
+async def admin_approve_driver(driver_id: str, _=Depends(require_roles("admin"))):
+    user = await users_col.find_one({"id": driver_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    await users_col.update_one(
+        {"id": driver_id},
+        {"$set": {"driver_status": "approved", "role": "driver", "is_verified": True}}
+    )
+    return {"ok": True}
+
+@api.post("/admin/drivers/{driver_id}/reject")
+async def admin_reject_driver(driver_id: str, _=Depends(require_roles("admin"))):
+    user = await users_col.find_one({"id": driver_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    await users_col.update_one(
+        {"id": driver_id},
+        {"$set": {"driver_status": "none"}}
+    )
+    return {"ok": True}
 
 # ============================================================
 # Health

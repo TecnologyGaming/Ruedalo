@@ -47,7 +47,7 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <KeyboardProvider>
           <AuthProvider>
-            <StatusBar style="light" />
+            <StatusBar style="dark" />
             <View style={{ flex: 1, backgroundColor: colors.bg }}>
               <Stack screenOptions={{ headerShown: false, animation: "fade", contentStyle: { backgroundColor: colors.bg } }} />
               <ToastHost />

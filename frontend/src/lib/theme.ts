@@ -1,22 +1,22 @@
-// RideVE Theme — Vibrant Neon (Magenta + Cyan)
+// RideVE Theme — Premium Light Modern (Yango & Ridery Inspired)
 export const colors = {
-  bg: "#0B0C10",
-  surface: "#14151F",
-  elevated: "#1F2133",
-  primary: "#FF007F",
-  primaryDim: "#D6006B",
-  secondary: "#00E5FF",
-  secondaryDim: "#00B8CC",
-  tertiary: "#8A2BE2",
-  success: "#00E5FF",
-  warning: "#FFB800",
-  danger: "#FF2A55",
-  textPrimary: "#FFFFFF",
-  textSecondary: "#A0A4B8",
-  textMuted: "#6B6F85",
-  border: "#2A2D43",
-  borderFocus: "#00E5FF",
-  overlay: "rgba(11,12,16,0.85)",
+  bg: "#F8F9FA",
+  surface: "#FFFFFF",
+  elevated: "#F1F5F9",
+  primary: "#FE2B4C", // Vibrant Crimson Red (Yango inspired)
+  primaryDim: "#D61A34",
+  secondary: "#10B981", // Emerald Green (Ridery inspired)
+  secondaryDim: "#059669",
+  tertiary: "#6366F1", // Indigo
+  success: "#10B981",
+  warning: "#F59E0B", // Amber/Yellow
+  danger: "#EF4444",
+  textPrimary: "#1E293B", // Rich Slate
+  textSecondary: "#475569", // Medium Slate
+  textMuted: "#94A3B8", // Light Slate/Placeholder
+  border: "#E2E8F0", // Light border
+  borderFocus: "#FE2B4C",
+  overlay: "rgba(15,23,42,0.45)", // Semi-transparent overlay
 };
 
 export const fonts = {
@@ -46,40 +46,40 @@ export const spacing = {
 
 export const shadows = {
   neonPrimary: {
-    shadowColor: "#FF007F",
-    shadowOpacity: 0.55,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 12,
+    shadowColor: "#FE2B4C",
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
   neonSecondary: {
-    shadowColor: "#00E5FF",
-    shadowOpacity: 0.55,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 12,
+    shadowColor: "#10B981",
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
   card: {
-    shadowColor: "#000",
-    shadowOpacity: 0.45,
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.06,
     shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
 };
 
-// Dark map style for react-native-maps
+// Light map style for react-native-maps (named darkMapStyle for direct compatibility)
 export const darkMapStyle = [
-  { elementType: "geometry", stylers: [{ color: "#0B0C10" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#A0A4B8" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#0B0C10" }] },
+  { elementType: "geometry", stylers: [{ color: "#F8F9FA" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#475569" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#FFFFFF" }] },
   { featureType: "administrative", elementType: "geometry", stylers: [{ visibility: "off" }] },
   { featureType: "poi", stylers: [{ visibility: "off" }] },
   { featureType: "transit", stylers: [{ visibility: "off" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#1F2133" }] },
-  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#14151F" }] },
-  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#2A2D43" }] },
-  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#6B6F85" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#05060B" }] },
-  { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#14151F" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#FFFFFF" }] },
+  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#E2E8F0" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#F1F5F9" }] },
+  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#64748B" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#C7D2FE" }] },
+  { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#F8F9FA" }] },
 ];
