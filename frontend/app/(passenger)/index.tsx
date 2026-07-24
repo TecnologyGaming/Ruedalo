@@ -296,51 +296,78 @@ export default function PassengerHome() {
 
             {estimate ? (
               <View style={{ gap: 10 }}>
-                {/* Service Categories Cards - Moto, Economico, Confort */}
-                <View style={styles.servicesGrid}>
+                {/* Service Categories Cards (Yango Vertical List Layout) */}
+                <View style={styles.servicesVerticalList}>
                   {/* Tier 1: Moto */}
                   <TouchableOpacity 
-                    style={[styles.serviceCard, selectedService === "moto" && styles.serviceCardActive]}
+                    style={[styles.verticalServiceItem, selectedService === "moto" && styles.verticalServiceItemActive]}
                     onPress={() => setSelectedService("moto")}
                     testID="service-moto-btn"
                   >
-                    <View style={[styles.serviceIconOuter, selectedService === "moto" && { backgroundColor: "#FFF1F2" }]}>
-                      <Bike size={20} color={selectedService === "moto" ? colors.primary : colors.textSecondary} />
+                    <View style={styles.verticalServiceLeft}>
+                      <View style={[styles.verticalServiceIconBox, selectedService === "moto" && { backgroundColor: "#FEE2E2" }]}>
+                        <Bike size={24} color={selectedService === "moto" ? colors.primary : colors.textSecondary} />
+                      </View>
+                      <View style={{ gap: 2 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                          <Text style={styles.verticalServiceName}>Moto Rápida</Text>
+                          <View style={styles.timeTag}><Text style={styles.timeTagTxt}>{estimate.duration_min - 2} min</Text></View>
+                        </View>
+                        <Text style={styles.verticalServiceDesc}>¡Casco obligatorio limpio incluido!</Text>
+                      </View>
                     </View>
-                    <Text style={styles.serviceName}>Moto Rápida</Text>
-                    <Text style={styles.serviceTime}>{estimate.duration_min - 2} min</Text>
-                    <Text style={styles.servicePrice}>${getTierPrice("moto").toFixed(2)}</Text>
-                    <Text style={styles.servicePriceBs}>Bs. {(getTierPrice("moto") * USD_BS_RATE).toFixed(0)}</Text>
+                    <View style={styles.verticalServiceRight}>
+                      <Text style={styles.verticalServicePrice}>${getTierPrice("moto").toFixed(2)}</Text>
+                      <Text style={styles.verticalServicePriceBs}>Bs. {(getTierPrice("moto") * USD_BS_RATE).toFixed(0)}</Text>
+                    </View>
                   </TouchableOpacity>
 
-                  {/* Tier 2: Economico */}
+                  {/* Tier 2: Económico */}
                   <TouchableOpacity 
-                    style={[styles.serviceCard, selectedService === "economico" && styles.serviceCardActive]}
+                    style={[styles.verticalServiceItem, selectedService === "economico" && styles.verticalServiceItemActive]}
                     onPress={() => setSelectedService("economico")}
                     testID="service-economico-btn"
                   >
-                    <View style={[styles.serviceIconOuter, selectedService === "economico" && { backgroundColor: "#FFF1F2" }]}>
-                      <Car size={20} color={selectedService === "economico" ? colors.primary : colors.textSecondary} />
+                    <View style={styles.verticalServiceLeft}>
+                      <View style={[styles.verticalServiceIconBox, selectedService === "economico" && { backgroundColor: "#FEE2E2" }]}>
+                        <Car size={24} color={selectedService === "economico" ? colors.primary : colors.textSecondary} />
+                      </View>
+                      <View style={{ gap: 2 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                          <Text style={styles.verticalServiceName}>Económico</Text>
+                          <View style={styles.timeTag}><Text style={styles.timeTagTxt}>{estimate.duration_min} min</Text></View>
+                        </View>
+                        <Text style={styles.verticalServiceDesc}>Autos limpios y económicos</Text>
+                      </View>
                     </View>
-                    <Text style={styles.serviceName}>Económico</Text>
-                    <Text style={styles.serviceTime}>{estimate.duration_min} min</Text>
-                    <Text style={styles.servicePrice}>${getTierPrice("economico").toFixed(2)}</Text>
-                    <Text style={styles.servicePriceBs}>Bs. {(getTierPrice("economico") * USD_BS_RATE).toFixed(0)}</Text>
+                    <View style={styles.verticalServiceRight}>
+                      <Text style={styles.verticalServicePrice}>${getTierPrice("economico").toFixed(2)}</Text>
+                      <Text style={styles.verticalServicePriceBs}>Bs. {(getTierPrice("economico") * USD_BS_RATE).toFixed(0)}</Text>
+                    </View>
                   </TouchableOpacity>
 
-                  {/* Tier 3: Confort */}
+                  {/* Tier 3: Confort VIP */}
                   <TouchableOpacity 
-                    style={[styles.serviceCard, selectedService === "confort" && styles.serviceCardActive]}
+                    style={[styles.verticalServiceItem, selectedService === "confort" && styles.verticalServiceItemActive]}
                     onPress={() => setSelectedService("confort")}
                     testID="service-confort-btn"
                   >
-                    <View style={[styles.serviceIconOuter, selectedService === "confort" && { backgroundColor: "#FFF1F2" }]}>
-                      <Car size={20} color={selectedService === "confort" ? colors.primary : colors.textSecondary} />
+                    <View style={styles.verticalServiceLeft}>
+                      <View style={[styles.verticalServiceIconBox, selectedService === "confort" && { backgroundColor: "#FEE2E2" }]}>
+                        <Car size={24} color={selectedService === "confort" ? colors.primary : colors.textSecondary} />
+                      </View>
+                      <View style={{ gap: 2 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                          <Text style={styles.verticalServiceName}>Confort VIP</Text>
+                          <View style={styles.timeTag}><Text style={styles.timeTagTxt}>{estimate.duration_min + 1} min</Text></View>
+                        </View>
+                        <Text style={styles.verticalServiceDesc}>Clase ejecutiva con aire acondicionado</Text>
+                      </View>
                     </View>
-                    <Text style={styles.serviceName}>Confort VIP</Text>
-                    <Text style={styles.serviceTime}>{estimate.duration_min + 1} min</Text>
-                    <Text style={styles.servicePrice}>${getTierPrice("confort").toFixed(2)}</Text>
-                    <Text style={styles.servicePriceBs}>Bs. {(getTierPrice("confort") * USD_BS_RATE).toFixed(0)}</Text>
+                    <View style={styles.verticalServiceRight}>
+                      <Text style={styles.verticalServicePrice}>${getTierPrice("confort").toFixed(2)}</Text>
+                      <Text style={styles.verticalServicePriceBs}>Bs. {(getTierPrice("confort") * USD_BS_RATE).toFixed(0)}</Text>
+                    </View>
                   </TouchableOpacity>
                 </View>
 
@@ -415,20 +442,33 @@ export default function PassengerHome() {
       <Modal visible={verifyModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <Shield size={24} color={colors.primary} />
-                <Text style={styles.modalTitle}>Verificación de Seguridad</Text>
+            
+            {/* Custom Styled Silver-Blue Shield Icon Header (Yango Style) */}
+            <View style={styles.yangoShieldHeader}>
+              <View style={styles.yangoShieldOuter}>
+                <View style={styles.yangoShieldInner}>
+                  <Shield size={40} color="#3B82F6" />
+                </View>
               </View>
-              <TouchableOpacity style={styles.closeModalBtn} onPress={() => setVerifyModal(false)}>
-                <X size={20} color={colors.textPrimary} />
+              <Text style={styles.yangoShieldTitle}>VERIFICACIÓN PREVIA AL VIAJE</Text>
+              <Text style={styles.yangoShieldSub}>Medidas para mejorar la seguridad y la comodidad al viajar</Text>
+              
+              <TouchableOpacity style={styles.closeModalBtnFloating} onPress={() => setVerifyModal(false)}>
+                <X size={18} color={colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Quick action buttons row (Emergencia and Asistencia) - Yango Style */}
+            <View style={styles.quickActionRow}>
+              <TouchableOpacity style={styles.quickActionBtnRed} onPress={() => toast("Llamando a servicios de emergencia local...", "error")}>
+                <Text style={styles.quickActionBtnTxtRed}>🚨 Emergencia</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.quickActionBtnGray} onPress={() => toast("Conectando con asistencia de RideVE...", "info")}>
+                <Text style={styles.quickActionBtnTxtGray}>🎧 Asistencia</Text>
               </TouchableOpacity>
             </View>
 
             <View style={styles.modalSubHeader}>
-              <Text style={styles.modalSubTitle}>Tu seguridad es nuestra prioridad</Text>
-              <Text style={styles.modalSubDesc}>Completa estas 6 medidas de verificación para tener viajes más seguros y confiables en Venezuela.</Text>
-              
               {/* Progress bar */}
               <View style={styles.progressBarBg}>
                 <View style={[styles.progressBarFill, { width: `${(getChecklistCount() / 6) * 100}%` }]} />
@@ -649,15 +689,19 @@ const styles = StyleSheet.create({
   routeLine: { width: 1, height: 12, backgroundColor: colors.border, marginLeft: 4 },
   routeAddr: { color: colors.textPrimary, fontFamily: fonts.bodyMedium, fontSize: 13, flex: 1 },
 
-  // Category selection styles
-  servicesGrid: { flexDirection: "row", gap: 10, marginVertical: 6 },
-  serviceCard: { flex: 1, backgroundColor: colors.bg, borderWidth: 1.5, borderColor: colors.border, borderRadius: radii.lg, padding: 12, alignItems: "center", gap: 4, ...shadows.card },
-  serviceCardActive: { borderColor: colors.primary, backgroundColor: "#FEF2F4" },
-  serviceIconOuter: { width: 36, height: 36, borderRadius: radii.full, backgroundColor: colors.elevated, alignItems: "center", justifyContent: "center" },
-  serviceName: { color: colors.textPrimary, fontFamily: fonts.bodyBold, fontSize: 12 },
-  serviceTime: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 11 },
-  servicePrice: { color: colors.primary, fontFamily: fonts.headingBold, fontSize: 16, marginTop: 2 },
-  servicePriceBs: { color: colors.textSecondary, fontFamily: fonts.bodyBold, fontSize: 11 },
+  // Category selection styles (Yango Vertical Layout)
+  servicesVerticalList: { gap: 10, marginVertical: 4 },
+  verticalServiceItem: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: colors.bg, borderWidth: 1.5, borderColor: colors.border, borderRadius: radii.lg, padding: 12, ...shadows.card },
+  verticalServiceItemActive: { borderColor: colors.primary, backgroundColor: "#FEF2F4" },
+  verticalServiceLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
+  verticalServiceIconBox: { width: 44, height: 44, borderRadius: radii.full, backgroundColor: colors.elevated, alignItems: "center", justifyContent: "center" },
+  verticalServiceName: { color: colors.textPrimary, fontFamily: fonts.bodyBold, fontSize: 14 },
+  verticalServiceDesc: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 11 },
+  verticalServiceRight: { alignItems: "flex-end", gap: 2 },
+  verticalServicePrice: { color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 17 },
+  verticalServicePriceBs: { color: colors.textSecondary, fontFamily: fonts.bodyBold, fontSize: 11 },
+  timeTag: { backgroundColor: "#F1F5F9", paddingVertical: 2, paddingHorizontal: 6, borderRadius: radii.sm },
+  timeTagTxt: { color: colors.textSecondary, fontFamily: fonts.bodyBold, fontSize: 10 },
 
   instructionContainer: { borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, backgroundColor: colors.bg, paddingHorizontal: 12, height: 44, justifyContent: "center" },
   instructionInput: { color: colors.textPrimary, fontFamily: fonts.body, fontSize: 12, width: "100%" },
@@ -671,21 +715,29 @@ const styles = StyleSheet.create({
   confirmRideBtn: { backgroundColor: colors.primary, height: 50, borderRadius: radii.xl, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, ...shadows.neonPrimary, marginTop: 4 },
   confirmRideBtnTxt: { color: "#fff", fontFamily: fonts.bodyBold, fontSize: 15 },
 
-  // Pre-trip Checklist Modal styles
-  modalOverlay: { flex: 1, backgroundColor: "rgba(15,23,42,0.5)", justifyContent: "flex-end" },
-  modalContent: { backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, maxHeight: "90%" },
-  modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 14 },
-  modalTitle: { color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 18 },
-  closeModalBtn: { width: 32, height: 32, borderRadius: 999, backgroundColor: colors.elevated, alignItems: "center", justifyContent: "center" },
+  // Pre-trip Checklist Modal styles (Yango Shield Style)
+  modalOverlay: { flex: 1, backgroundColor: "rgba(15,23,42,0.6)", justifyContent: "flex-end" },
+  modalContent: { backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 22, maxHeight: "90%" },
   
-  modalSubHeader: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border, gap: 6 },
-  modalSubTitle: { color: colors.textPrimary, fontFamily: fonts.bodyBold, fontSize: 14 },
-  modalSubDesc: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 12, lineHeight: 18 },
-  progressBarBg: { height: 8, backgroundColor: colors.elevated, borderRadius: 999, marginTop: 6 },
+  yangoShieldHeader: { alignItems: "center", gap: 10, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border, position: "relative" },
+  yangoShieldOuter: { width: 72, height: 72, borderRadius: 999, borderWidth: 2, borderColor: "#3B82F6", alignItems: "center", justifyContent: "center", backgroundColor: "#EFF6FF" },
+  yangoShieldInner: { width: 56, height: 56, borderRadius: 999, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center", ...shadows.card },
+  yangoShieldTitle: { color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 18, letterSpacing: -0.5, textAlign: "center" },
+  yangoShieldSub: { color: colors.textSecondary, fontFamily: fonts.bodyMedium, fontSize: 12, textAlign: "center", paddingHorizontal: 20 },
+  closeModalBtnFloating: { position: "absolute", top: 10, right: 10, width: 30, height: 30, borderRadius: 999, backgroundColor: colors.elevated, alignItems: "center", justifyContent: "center" },
+
+  quickActionRow: { flexDirection: "row", gap: 12, marginVertical: 14 },
+  quickActionBtnRed: { flex: 1, backgroundColor: "#FEE2E2", height: 44, borderRadius: radii.md, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#FCA5A5" },
+  quickActionBtnGray: { flex: 1, backgroundColor: colors.bg, height: 44, borderRadius: radii.md, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border },
+  quickActionBtnTxtRed: { color: colors.primary, fontFamily: fonts.bodyBold, fontSize: 13 },
+  quickActionBtnTxtGray: { color: colors.textPrimary, fontFamily: fonts.bodyBold, fontSize: 13 },
+
+  modalSubHeader: { paddingVertical: 10, gap: 6 },
+  progressBarBg: { height: 8, backgroundColor: colors.elevated, borderRadius: 999, marginTop: 4 },
   progressBarFill: { height: 8, backgroundColor: colors.primary, borderRadius: 999 },
   progressCounterTxt: { color: colors.primary, fontFamily: fonts.bodyBold, fontSize: 11, textAlign: "right" },
 
-  checklistScroll: { gap: 16, paddingVertical: 16, paddingBottom: 30 },
+  checklistScroll: { gap: 16, paddingVertical: 14, paddingBottom: 24 },
   checkItem: { flexDirection: "row", gap: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
   checkIconActive: { width: 22, height: 22, borderRadius: 999, backgroundColor: colors.success, alignItems: "center", justifyContent: "center" },
   checkIconPending: { width: 22, height: 22, borderRadius: 999, borderWidth: 1.5, borderColor: colors.textMuted, backgroundColor: colors.surface },

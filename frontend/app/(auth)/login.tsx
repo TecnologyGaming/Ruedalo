@@ -137,20 +137,40 @@ export default function LoginScreen() {
         bottomOffset={20}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.header}>
-          <View style={styles.logoBadge}>
-            <Sparkles size={20} color={colors.primary} />
-            <Text style={styles.logoBadgeTxt}>RideVE Premium</Text>
+        {/* Logo and country picker row styled like Ridery */}
+        <View style={styles.rideryLogoArea}>
+          <Text style={styles.rideryBrand}>Ride<Text style={{ color: colors.secondary }}>VE</Text></Text>
+          <View style={styles.globeIcon}><Text style={{ fontSize: 16 }}>🌐</Text></View>
+        </View>
+
+        {/* Hero Illustration with Ridery Mint-Green Motorcycle and bold competitor layout */}
+        <View style={styles.heroSection}>
+          <View style={styles.headlineContainer}>
+            <Text style={styles.headlineMain}>CONFIABLES Y</Text>
+            <Text style={styles.headlineMain}>ECONÓMICOS</Text>
+            <Text style={[styles.headlineMain, { color: colors.primary }]}>VIAJES</Text>
           </View>
-          <Text style={styles.title}>Viaja seguro y rápido</Text>
-          <Text style={styles.subtitle}>La app de movilidad número uno para Venezuela</Text>
+          
+          <View style={styles.illustrationContainer}>
+            <View style={styles.illustrationFloorShadow} />
+            <View style={styles.illustrationMotorcycle}>
+              <View style={styles.motoBody} />
+              <View style={styles.motoEngine} />
+              <View style={styles.motoSeat} />
+              <View style={styles.motoShield} />
+              <View style={styles.motoWheelBack} />
+              <View style={styles.motoWheelFront} />
+              <View style={styles.motoHandlebar} />
+              <View style={styles.motoBadge}><Text style={styles.motoBadgeTxt}>R</Text></View>
+            </View>
+          </View>
         </View>
 
         {!useEmail ? (
           // Phone Auth Form (Default)
           <View style={styles.formContainer}>
             <Text style={styles.formTitle}>Ingresa tu número de teléfono</Text>
-            <Text style={styles.formDesc}>Te enviaremos un código SMS para verificar tu identidad.</Text>
+            <Text style={styles.formDesc}>Recibe un código SMS para verificar tu cuenta en segundos.</Text>
             
             <View style={styles.phoneInputRow}>
               <View style={styles.countryCode}>
@@ -159,7 +179,7 @@ export default function LoginScreen() {
               </View>
               <TextInput
                 style={styles.phoneInput}
-                placeholder="414 1234567"
+                placeholder="424 1234567"
                 placeholderTextColor={colors.textMuted}
                 keyboardType="phone-pad"
                 value={phone}
@@ -245,11 +265,14 @@ export default function LoginScreen() {
               ¿No tienes cuenta? <Text style={styles.registerLinkHighlight}>Crea una aquí</Text>
             </Text>
           </TouchableOpacity>
+          <TouchableOpacity style={{ marginTop: 8 }} onPress={() => router.push("/(passenger)/profile")}>
+            <Text style={styles.conductorLink}>Quiero ser conductor de RideVE</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Demo Fast Account Switcher */}
         <View style={styles.demoContainer}>
-          <Text style={styles.demoTitle}>Cuentas de demostración</Text>
+          <Text style={styles.demoTitle}>Acceso de Demostración Rápido</Text>
           <View style={styles.demoChipsRow}>
             <TouchableOpacity style={styles.demoChip} onPress={() => quickFill("passenger")} testID="quick-passenger-btn">
               <Text style={styles.demoChipTxt}>Pasajero</Text>
@@ -276,7 +299,7 @@ export default function LoginScreen() {
             </View>
             
             <View style={styles.shieldBadge}>
-              <Shield size={28} color={colors.success} />
+              <Shield size={24} color={colors.success} />
               <Text style={styles.shieldTxt}>Código de seguridad enviado</Text>
             </View>
 
@@ -310,42 +333,64 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
-  scroll: { flexGrow: 1, padding: spacing.lg, justifyContent: "space-between", gap: spacing.lg },
-  header: { marginTop: 40, alignItems: "center", gap: 10 },
-  logoBadge: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.elevated, paddingVertical: 6, paddingHorizontal: 12, borderRadius: radii.full },
-  logoBadgeTxt: { color: colors.primary, fontFamily: fonts.bodyBold, fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 },
-  title: { color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 30, textAlign: "center", letterSpacing: -0.5 },
-  subtitle: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 14, textAlign: "center", paddingHorizontal: 12 },
-  formContainer: { backgroundColor: colors.surface, padding: 24, borderRadius: radii.xl, gap: 16, ...shadows.card },
-  formTitle: { color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 18 },
-  formDesc: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 13, marginBottom: 8 },
-  phoneInputRow: { flexDirection: "row", gap: 12 },
-  countryCode: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, paddingHorizontal: 12, height: 52 },
+  safe: { flex: 1, backgroundColor: "#FFFFFF" },
+  scroll: { flexGrow: 1, padding: spacing.md, justifyContent: "space-between", gap: spacing.md, backgroundColor: "#FFFFFF" },
+  
+  rideryLogoArea: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10, paddingHorizontal: 4 },
+  rideryBrand: { fontSize: 28, fontFamily: fonts.headingBold, color: "#111317", letterSpacing: -0.5 },
+  globeIcon: { width: 34, height: 34, borderRadius: 999, backgroundColor: "#F1F2F6", alignItems: "center", justifyContent: "center" },
+
+  heroSection: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginVertical: 14 },
+  headlineContainer: { gap: 2, flex: 1.1 },
+  headlineMain: { fontSize: 26, fontFamily: fonts.headingBold, color: "#111317", lineHeight: 30, letterSpacing: -1 },
+
+  // Motorcycle Illustration Matching Ridery Design
+  illustrationContainer: { flex: 1.2, height: 150, position: "relative", justifyContent: "center", alignItems: "center" },
+  illustrationFloorShadow: { width: 110, height: 10, borderRadius: 999, backgroundColor: "rgba(0,0,0,0.06)", position: "absolute", bottom: 20 },
+  illustrationMotorcycle: { width: 100, height: 80, position: "relative" },
+  motoBody: { position: "absolute", bottom: 15, left: 15, width: 70, height: 26, backgroundColor: "#10B981", borderRadius: 8, transform: [{ rotate: "-5deg" }] },
+  motoEngine: { position: "absolute", bottom: 14, left: 36, width: 28, height: 20, backgroundColor: "#2A2D43", borderRadius: 4 },
+  motoSeat: { position: "absolute", bottom: 38, left: 16, width: 34, height: 8, backgroundColor: "#111317", borderTopLeftRadius: 6, borderBottomRightRadius: 6 },
+  motoShield: { position: "absolute", bottom: 22, right: 18, width: 14, height: 30, backgroundColor: "#111317", borderTopRightRadius: 8, borderBottomLeftRadius: 4, transform: [{ rotate: "15deg" }] },
+  motoWheelBack: { position: "absolute", bottom: 6, left: 6, width: 28, height: 28, borderRadius: 999, backgroundColor: "#F1F2F6", borderWidth: 4, borderColor: "#111317" },
+  motoWheelFront: { position: "absolute", bottom: 6, right: 6, width: 28, height: 28, borderRadius: 999, backgroundColor: "#F1F2F6", borderWidth: 4, borderColor: "#111317" },
+  motoHandlebar: { position: "absolute", bottom: 50, right: 22, width: 8, height: 12, backgroundColor: "#2A2D43", borderTopRightRadius: 4 },
+  motoBadge: { position: "absolute", top: 28, left: 45, width: 16, height: 16, borderRadius: 999, backgroundColor: "#111317", alignItems: "center", justifyContent: "center" },
+  motoBadgeTxt: { color: "#FFFFFF", fontSize: 9, fontFamily: fonts.headingBold },
+
+  formContainer: { backgroundColor: colors.surface, padding: 20, borderRadius: radii.xl, gap: 14, borderWidth: 1, borderColor: colors.border, ...shadows.card },
+  formTitle: { color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 16, letterSpacing: -0.2 },
+  formDesc: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 13, lineHeight: 18 },
+  phoneInputRow: { flexDirection: "row", gap: 10 },
+  countryCode: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, paddingHorizontal: 10, height: 50 },
   flag: { fontSize: 18 },
-  countryCodeTxt: { color: colors.textPrimary, fontFamily: fonts.bodyBold, fontSize: 15 },
-  phoneInput: { flex: 1, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, paddingHorizontal: 16, height: 52, color: colors.textPrimary, fontFamily: fonts.bodyMedium, fontSize: 16 },
-  primaryBtn: { backgroundColor: colors.primary, height: 54, borderRadius: radii.xl, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 12, ...shadows.neonPrimary },
-  primaryBtnTxt: { color: "#fff", fontFamily: fonts.bodyBold, fontSize: 16 },
-  secondaryLink: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 10, marginTop: 4 },
-  secondaryLinkTxt: { color: colors.textSecondary, fontFamily: fonts.bodyMedium, fontSize: 14 },
-  footer: { alignItems: "center" },
-  registerLink: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 14 },
-  registerLinkHighlight: { color: colors.primary, fontFamily: fonts.bodyBold },
-  demoContainer: { backgroundColor: colors.elevated, padding: 16, borderRadius: radii.lg, gap: 12, marginTop: 10 },
-  demoTitle: { color: colors.textSecondary, fontFamily: fonts.bodyBold, fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5, textAlign: "center" },
+  countryCodeTxt: { color: colors.textPrimary, fontFamily: fonts.bodyBold, fontSize: 14 },
+  phoneInput: { flex: 1, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, paddingHorizontal: 14, height: 50, color: colors.textPrimary, fontFamily: fonts.bodyMedium, fontSize: 15 },
+  primaryBtn: { backgroundColor: colors.secondary, height: 52, borderRadius: radii.xl, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 8, ...shadows.neonSecondary },
+  primaryBtnTxt: { color: "#fff", fontFamily: fonts.bodyBold, fontSize: 15 },
+  secondaryLink: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 8, marginTop: 2 },
+  secondaryLinkTxt: { color: colors.textSecondary, fontFamily: fonts.bodyMedium, fontSize: 13 },
+  
+  footer: { alignItems: "center", gap: 6 },
+  registerLink: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 13 },
+  registerLinkHighlight: { color: colors.secondary, fontFamily: fonts.bodyBold },
+  conductorLink: { color: colors.textSecondary, fontFamily: fonts.bodyBold, fontSize: 13, textDecorationLine: "underline" },
+
+  demoContainer: { backgroundColor: colors.elevated, padding: 14, borderRadius: radii.lg, gap: 10, marginTop: 6 },
+  demoTitle: { color: colors.textSecondary, fontFamily: fonts.bodyBold, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, textAlign: "center" },
   demoChipsRow: { flexDirection: "row", gap: 8 },
-  demoChip: { flex: 1, backgroundColor: colors.surface, height: 40, borderRadius: radii.full, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border, ...shadows.card },
-  demoChipTxt: { color: colors.textPrimary, fontFamily: fonts.bodyMedium, fontSize: 12 },
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" },
-  modalContent: { backgroundColor: colors.surface, borderTopLeftRadius: radii.xl, borderTopRightRadius: radii.xl, padding: 24, paddingBottom: 48, gap: 16 },
+  demoChip: { flex: 1, backgroundColor: colors.surface, height: 38, borderRadius: radii.full, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border, ...shadows.card },
+  demoChipTxt: { color: colors.textPrimary, fontFamily: fonts.bodyMedium, fontSize: 11 },
+  
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
+  modalContent: { backgroundColor: colors.surface, borderTopLeftRadius: radii.xl, borderTopRightRadius: radii.xl, padding: 22, paddingBottom: 40, gap: 14 },
   modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  modalTitle: { color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 20 },
-  shieldBadge: { flexDirection: "row", alignItems: "center", gap: 8, alignSelf: "center", backgroundColor: "#ECFDF5", paddingVertical: 8, paddingHorizontal: 16, borderRadius: radii.full, marginTop: 8 },
-  shieldTxt: { color: colors.success, fontFamily: fonts.bodyBold, fontSize: 12 },
-  modalDesc: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 14, textAlign: "center", paddingHorizontal: 12 },
-  otpInput: { backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, height: 60, color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 24, textAlign: "center", letterSpacing: 8, marginVertical: 12 },
-  modalVerifyBtn: { backgroundColor: colors.success, height: 52, borderRadius: radii.xl, alignItems: "center", justifyContent: "center", ...shadows.neonSecondary },
-  modalVerifyBtnTxt: { color: "#fff", fontFamily: fonts.bodyBold, fontSize: 16 },
-  resendCodeTxt: { color: colors.primary, fontFamily: fonts.bodyBold, fontSize: 14, textAlign: "center", marginTop: 8 },
+  modalTitle: { color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 18 },
+  shieldBadge: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "center", backgroundColor: "#ECFDF5", paddingVertical: 6, paddingHorizontal: 12, borderRadius: radii.full, marginTop: 4 },
+  shieldTxt: { color: colors.success, fontFamily: fonts.bodyBold, fontSize: 11 },
+  modalDesc: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 13, textAlign: "center", paddingHorizontal: 10 },
+  otpInput: { backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, height: 56, color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 22, textAlign: "center", letterSpacing: 8, marginVertical: 10 },
+  modalVerifyBtn: { backgroundColor: colors.success, height: 48, borderRadius: radii.xl, alignItems: "center", justifyContent: "center", ...shadows.neonSecondary },
+  modalVerifyBtnTxt: { color: "#fff", fontFamily: fonts.bodyBold, fontSize: 15 },
+  resendCodeTxt: { color: colors.secondary, fontFamily: fonts.bodyBold, fontSize: 13, textAlign: "center", marginTop: 4 },
 });

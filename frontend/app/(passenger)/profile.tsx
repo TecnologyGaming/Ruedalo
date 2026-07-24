@@ -2,7 +2,7 @@ import { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { LogOut, User, Mail, Phone, Car, BookOpen, ShieldCheck, HelpCircle, SwitchCamera, ArrowRight, X, Check, FileText } from "lucide-react-native";
+import { LogOut, User, Mail, Phone, Car, BookOpen, ShieldCheck, HelpCircle, SwitchCamera, ArrowRight, X, Check, FileText, Settings, MapPin } from "lucide-react-native";
 
 import { useAuth } from "@/src/lib/auth";
 import { colors, fonts, radii, spacing, shadows } from "@/src/lib/theme";
@@ -121,6 +121,37 @@ export function ProfileScreen() {
               <Text style={styles.roleText}>No Verificado</Text>
             )}
           </View>
+        </View>
+
+        {/* Horizontal Action Row (Yango Style) */}
+        <View style={styles.yangoActionRow}>
+          <TouchableOpacity style={styles.yangoActionBtn} onPress={() => router.push("/(passenger)/trips")}>
+            <View style={styles.yangoActionIconBox}>
+              <FileText size={20} color={colors.textPrimary} />
+            </View>
+            <Text style={styles.yangoActionLabel}>Historial</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.yangoActionBtn} onPress={() => toast("Conectando con el canal de soporte 24/7...", "info")}>
+            <View style={styles.yangoActionIconBox}>
+              <HelpCircle size={20} color={colors.textPrimary} />
+            </View>
+            <Text style={styles.yangoActionLabel}>Soporte</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.yangoActionBtn} onPress={() => toast("Función de Direcciones Guardadas próximamente", "info")}>
+            <View style={styles.yangoActionIconBox}>
+              <MapPin size={20} color={colors.textPrimary} />
+            </View>
+            <Text style={styles.yangoActionLabel}>Direcciones</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.yangoActionBtn} onPress={() => toast("Abriendo configuración avanzada...", "info")}>
+            <View style={styles.yangoActionIconBox}>
+              <Settings size={20} color={colors.textPrimary} />
+            </View>
+            <Text style={styles.yangoActionLabel}>Ajustes</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Unified Mode Switcher Component - Ridery inspired */}
@@ -290,6 +321,12 @@ const styles = StyleSheet.create({
   pendingTxt: { color: "#92400E", fontFamily: fonts.bodyBold, fontSize: 12, paddingLeft: 12 },
   simAppBtn: { backgroundColor: colors.surface, borderWidth: 1, borderColor: "#FDE68A", paddingVertical: 6, paddingHorizontal: 10, borderRadius: radii.full, alignSelf: "flex-start", marginTop: 4 },
   simAppBtnTxt: { color: "#92400E", fontFamily: fonts.bodyBold, fontSize: 10 },
+
+  // Yango Profile Action Row
+  yangoActionRow: { flexDirection: "row", justifyContent: "space-between", backgroundColor: colors.surface, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border },
+  yangoActionBtn: { flex: 1, alignItems: "center", gap: 6 },
+  yangoActionIconBox: { width: 44, height: 44, borderRadius: radii.full, backgroundColor: colors.bg, alignItems: "center", justifyContent: "center", borderWidth: 1.5, borderColor: colors.border, ...shadows.card },
+  yangoActionLabel: { color: colors.textPrimary, fontFamily: fonts.bodyMedium, fontSize: 11, textAlign: "center" },
 
   card: { marginHorizontal: spacing.md, padding: spacing.md, borderRadius: radii.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, gap: 14, ...shadows.card },
   row: { flexDirection: "row", alignItems: "center", gap: 14 },
