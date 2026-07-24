@@ -39,6 +39,9 @@ export default function PassengerHome() {
   const [selectedService, setSelectedService] = useState<"moto" | "economico" | "confort">("economico");
   const [instructions, setInputInstructions] = useState("");
   const [payMethod, setPayMethod] = useState<"wallet" | "cash">("wallet");
+  const [orderForOthers, setOrderForOthers] = useState(false);
+  const [otherName, setOtherName] = useState("");
+  const [otherPhone, setOtherPhone] = useState("");
   
   // Pre-trip Verification checklist state
   const [verifyModal, setVerifyModal] = useState(false);
@@ -410,6 +413,40 @@ export default function PassengerHome() {
                   </TouchableOpacity>
                 </View>
 
+                {/* Pedido para otra persona (Yango Style Switch!) */}
+                <View style={styles.otherPersonRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.otherPersonTitle}>Pedido para otra persona</Text>
+                    <Text style={styles.otherPersonDesc}>El conductor verá el nombre y teléfono del pasajero.</Text>
+                  </View>
+                  <TouchableOpacity 
+                    style={[styles.toggleBg, orderForOthers && styles.toggleBgActive]} 
+                    onPress={() => setOrderForOthers(!orderForOthers)}
+                  >
+                    <View style={[styles.toggleHandle, orderForOthers && styles.toggleHandleActive]} />
+                  </TouchableOpacity>
+                </View>
+
+                {orderForOthers && (
+                  <View style={styles.otherPersonInputBox}>
+                    <TextInput
+                      style={styles.otherPersonInput}
+                      placeholder="Nombre del pasajero (ej: Juan)"
+                      placeholderTextColor={colors.textMuted}
+                      value={otherName}
+                      onChangeText={setOtherName}
+                    />
+                    <TextInput
+                      style={styles.otherPersonInput}
+                      placeholder="Teléfono (ej: 04241112222)"
+                      placeholderTextColor={colors.textMuted}
+                      value={otherPhone}
+                      onChangeText={setOtherPhone}
+                      keyboardType="phone-pad"
+                    />
+                  </View>
+                )}
+
                 {/* Big native Request button */}
                 <TouchableOpacity 
                   style={[styles.confirmRideBtn, confirming && { opacity: 0.8 }]} 
@@ -754,6 +791,17 @@ const styles = StyleSheet.create({
   
   safetyRulesBox: { backgroundColor: colors.bg, padding: 12, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, marginTop: 8, gap: 6 },
   safetyRuleText: { color: colors.textSecondary, fontFamily: fonts.bodyMedium, fontSize: 11, lineHeight: 16 },
+
+  // Pedido para otra persona (Yango Style)
+  otherPersonRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: colors.bg, borderWidth: 1.5, borderColor: colors.border, borderRadius: radii.lg, padding: 12, marginTop: 4 },
+  otherPersonTitle: { color: colors.textPrimary, fontFamily: fonts.bodyBold, fontSize: 13 },
+  otherPersonDesc: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 11, marginTop: 2 },
+  toggleBg: { width: 44, height: 24, borderRadius: radii.full, backgroundColor: colors.border, padding: 2, justifyContent: "center" },
+  toggleBgActive: { backgroundColor: colors.primary },
+  toggleHandle: { width: 20, height: 20, borderRadius: 999, backgroundColor: "#FFFFFF" },
+  toggleHandleActive: { alignSelf: "flex-end" },
+  otherPersonInputBox: { gap: 8, backgroundColor: colors.bg, borderRadius: radii.md, padding: 12, borderWidth: 1, borderColor: colors.border, marginTop: 4 },
+  otherPersonInput: { height: 38, backgroundColor: colors.surface, borderWith: 1, borderColor: colors.border, borderRadius: radii.sm, paddingHorizontal: 12, color: colors.textPrimary, fontFamily: fonts.bodyMedium, fontSize: 12, borderWidth: 1 },
 
   modalDoneBtn: { backgroundColor: colors.primary, height: 48, borderRadius: radii.xl, alignItems: "center", justifyContent: "center", marginTop: 10, marginBottom: 20, ...shadows.neonPrimary },
   modalDoneBtnTxt: { color: "#fff", fontFamily: fonts.bodyBold, fontSize: 15 },

@@ -3,8 +3,8 @@ export const colors = {
   bg: "#F8F9FA",
   surface: "#FFFFFF",
   elevated: "#F1F5F9",
-  primary: "#FE2B4C", // Vibrant Crimson Red (Yango inspired)
-  primaryDim: "#D61A34",
+  primary: "#FF1E34", // Signature Yango Red
+  primaryDim: "#D61126",
   secondary: "#10B981", // Emerald Green (Ridery inspired)
   secondaryDim: "#059669",
   tertiary: "#6366F1", // Indigo

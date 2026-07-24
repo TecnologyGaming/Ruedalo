@@ -137,13 +137,13 @@ export default function LoginScreen() {
         bottomOffset={20}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Logo and country picker row styled like Ridery */}
+        {/* Logo and country picker row styled like Yango */}
         <View style={styles.rideryLogoArea}>
-          <Text style={styles.rideryBrand}>Ride<Text style={{ color: colors.secondary }}>VE</Text></Text>
+          <Text style={styles.rideryBrand}>Yango <Text style={{ color: colors.primary, fontSize: 14 }}>●</Text></Text>
           <View style={styles.globeIcon}><Text style={{ fontSize: 16 }}>🌐</Text></View>
         </View>
 
-        {/* Hero Illustration with Ridery Mint-Green Motorcycle and bold competitor layout */}
+        {/* Hero Illustration with Yango Red Car and bold competitor layout */}
         <View style={styles.heroSection}>
           <View style={styles.headlineContainer}>
             <Text style={styles.headlineMain}>CONFIABLES Y</Text>
@@ -154,14 +154,15 @@ export default function LoginScreen() {
           <View style={styles.illustrationContainer}>
             <View style={styles.illustrationFloorShadow} />
             <View style={styles.illustrationMotorcycle}>
-              <View style={styles.motoBody} />
-              <View style={styles.motoEngine} />
-              <View style={styles.motoSeat} />
-              <View style={styles.motoShield} />
-              <View style={styles.motoWheelBack} />
-              <View style={styles.motoWheelFront} />
-              <View style={styles.motoHandlebar} />
-              <View style={styles.motoBadge}><Text style={styles.motoBadgeTxt}>R</Text></View>
+              {/* Sleek Yango Red Passenger Car illustration */}
+              <View style={styles.carChassis} />
+              <View style={styles.carCab} />
+              <View style={styles.carWindowFront} />
+              <View style={styles.carWindowBack} />
+              <View style={styles.carWheelBack} />
+              <View style={styles.carWheelFront} />
+              <View style={styles.carLightFront} />
+              <View style={styles.carTaxiSign}><Text style={styles.carTaxiSignTxt}>TAXI</Text></View>
             </View>
           </View>
         </View>
@@ -344,19 +345,19 @@ const styles = StyleSheet.create({
   headlineContainer: { gap: 2, flex: 1.1 },
   headlineMain: { fontSize: 26, fontFamily: fonts.headingBold, color: "#111317", lineHeight: 30, letterSpacing: -1 },
 
-  // Motorcycle Illustration Matching Ridery Design
+  // Yango Red Passenger Taxi Car Illustration
   illustrationContainer: { flex: 1.2, height: 150, position: "relative", justifyContent: "center", alignItems: "center" },
   illustrationFloorShadow: { width: 110, height: 10, borderRadius: 999, backgroundColor: "rgba(0,0,0,0.06)", position: "absolute", bottom: 20 },
   illustrationMotorcycle: { width: 100, height: 80, position: "relative" },
-  motoBody: { position: "absolute", bottom: 15, left: 15, width: 70, height: 26, backgroundColor: "#10B981", borderRadius: 8, transform: [{ rotate: "-5deg" }] },
-  motoEngine: { position: "absolute", bottom: 14, left: 36, width: 28, height: 20, backgroundColor: "#2A2D43", borderRadius: 4 },
-  motoSeat: { position: "absolute", bottom: 38, left: 16, width: 34, height: 8, backgroundColor: "#111317", borderTopLeftRadius: 6, borderBottomRightRadius: 6 },
-  motoShield: { position: "absolute", bottom: 22, right: 18, width: 14, height: 30, backgroundColor: "#111317", borderTopRightRadius: 8, borderBottomLeftRadius: 4, transform: [{ rotate: "15deg" }] },
-  motoWheelBack: { position: "absolute", bottom: 6, left: 6, width: 28, height: 28, borderRadius: 999, backgroundColor: "#F1F2F6", borderWidth: 4, borderColor: "#111317" },
-  motoWheelFront: { position: "absolute", bottom: 6, right: 6, width: 28, height: 28, borderRadius: 999, backgroundColor: "#F1F2F6", borderWidth: 4, borderColor: "#111317" },
-  motoHandlebar: { position: "absolute", bottom: 50, right: 22, width: 8, height: 12, backgroundColor: "#2A2D43", borderTopRightRadius: 4 },
-  motoBadge: { position: "absolute", top: 28, left: 45, width: 16, height: 16, borderRadius: 999, backgroundColor: "#111317", alignItems: "center", justifyContent: "center" },
-  motoBadgeTxt: { color: "#FFFFFF", fontSize: 9, fontFamily: fonts.headingBold },
+  carChassis: { position: "absolute", bottom: 15, left: 10, width: 80, height: 22, backgroundColor: colors.primary, borderRadius: 6 },
+  carCab: { position: "absolute", bottom: 33, left: 24, width: 44, height: 18, backgroundColor: "#1E293B", borderTopLeftRadius: 10, borderTopRightRadius: 12 },
+  carWindowFront: { position: "absolute", bottom: 35, right: 34, width: 16, height: 12, backgroundColor: "#FFFFFF", borderTopRightRadius: 8, opacity: 0.8 },
+  carWindowBack: { position: "absolute", bottom: 35, left: 28, width: 16, height: 12, backgroundColor: "#FFFFFF", borderTopLeftRadius: 6, opacity: 0.8 },
+  carWheelBack: { position: "absolute", bottom: 6, left: 18, width: 22, height: 22, borderRadius: 999, backgroundColor: "#F1F2F6", borderWidth: 4, borderColor: "#111317" },
+  carWheelFront: { position: "absolute", bottom: 6, right: 18, width: 22, height: 22, borderRadius: 999, backgroundColor: "#F1F2F6", borderWidth: 4, borderColor: "#111317" },
+  carLightFront: { position: "absolute", bottom: 22, right: 10, width: 6, height: 8, backgroundColor: "#FBBF24", borderTopRightRadius: 4, borderBottomRightRadius: 4 },
+  carTaxiSign: { position: "absolute", bottom: 50, left: 38, backgroundColor: "#FFB800", paddingHorizontal: 4, paddingVertical: 1, borderRadius: 2, borderWidth: 1, borderColor: "#111317" },
+  carTaxiSignTxt: { color: "#111317", fontSize: 6, fontFamily: fonts.headingBold },
 
   formContainer: { backgroundColor: colors.surface, padding: 20, borderRadius: radii.xl, gap: 14, borderWidth: 1, borderColor: colors.border, ...shadows.card },
   formTitle: { color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 16, letterSpacing: -0.2 },
@@ -366,7 +367,7 @@ const styles = StyleSheet.create({
   flag: { fontSize: 18 },
   countryCodeTxt: { color: colors.textPrimary, fontFamily: fonts.bodyBold, fontSize: 14 },
   phoneInput: { flex: 1, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, paddingHorizontal: 14, height: 50, color: colors.textPrimary, fontFamily: fonts.bodyMedium, fontSize: 15 },
-  primaryBtn: { backgroundColor: colors.secondary, height: 52, borderRadius: radii.xl, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 8, ...shadows.neonSecondary },
+  primaryBtn: { backgroundColor: colors.primary, height: 52, borderRadius: radii.xl, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 8, ...shadows.neonPrimary },
   primaryBtnTxt: { color: "#fff", fontFamily: fonts.bodyBold, fontSize: 15 },
   secondaryLink: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 8, marginTop: 2 },
   secondaryLinkTxt: { color: colors.textSecondary, fontFamily: fonts.bodyMedium, fontSize: 13 },
