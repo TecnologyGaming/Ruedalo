@@ -3,18 +3,28 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView
 import { useRouter, useFocusEffect } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Location from "expo-location";
-import { MapPin, Navigation, Search, Star, Wallet as WalletIcon, X, Shield, ShieldCheck, Heart, Info, ChevronRight, User, Phone, Check, CreditCard, MessageSquare, Bike, Car, Sparkles, Package } from "lucide-react-native";
+import { MapPin, Navigation, Search, Star, Wallet as WalletIcon, X, Shield, ShieldCheck, Heart, Info, ChevronRight, User, Phone, Check, CreditCard, MessageSquare, Bike, Car, Sparkles, Package, Home, Briefcase, Clock, AlertTriangle, HelpCircle } from "lucide-react-native";
 
 import { useAuth } from "@/src/lib/auth";
 import { colors, fonts, radii, spacing, shadows } from "@/src/lib/theme";
 import { RideMap, MarkerData } from "@/src/components/RideMap";
-import { NeonButton } from "@/src/components/NeonButton";
 import { FieldInput } from "@/src/components/FieldInput";
 import { toast } from "@/src/components/Toast";
-import { db } from "@/src/lib/firebase";
-import { collection, doc, getDocs, getDoc } from "firebase/firestore";
 
 const CARACAS = { lat: 10.4998, lng: -66.8517 };
+const USD_BS_RATE = 38.5; // Official BCV Rate
+
+const RECENT_DESTS = [
+  { name: "C.C. Sambil Chacao", address: "Av. Libertador, Chacao", lat: 10.4933, lng: -66.8538 },
+  { name: "Aeropuerto Maiquetía", address: "La Guaira, Vargas", lat: 10.6014, lng: -66.9911 },
+  { name: "Universidad Central de Venezuela", address: "Av. Los Ilustres, Caracas", lat: 10.4910, lng: -66.8910 },
+];
+
+const SUGGESTIONS = [
+  { name: "Parque del Este", address: "Chacao, Caracas", lat: 10.4920, lng: -66.8421 },
+  { name: "Centro Comercial Líder", address: "Los Ruices, Caracas", lat: 10.4850, lng: -66.8120 },
+  { name: "Plaza Venezuela", address: "Caracas", lat: 10.4980, lng: -66.8820 },
+];
 
 export default function PassengerHome() {
   const router = useRouter();
@@ -24,12 +34,13 @@ export default function PassengerHome() {
   const [destination, setDestination] = useState<{ name: string; address: string; lat: number; lng: number } | null>(null);
   const [estimate, setEstimate] = useState<any>(null);
   const [confirming, setConfirming] = useState(false);
-  const [active, setActive] = useState<any>(null);
   const [query, setQuery] = useState("");
   
-  // Custom states for premium Ruedalo features
+  // Tab Selector of Activity: Pedir Carrera vs Enviar Paquete
   const [selectedServiceType, setSelectedServiceType] = useState<"ride" | "delivery">("ride");
   const [selectedService, setSelectedService] = useState<"moto" | "economico" | "confort" | "xl" | "delivery" | "paquete">("economico");
+  
+  // Custom states matching 02/03 details
   const [instructions, setInputInstructions] = useState("");
   const [payMethod, setPayMethod] = useState<"wallet" | "cash">("wallet");
   const [orderForOthers, setOrderForOthers] = useState(false);
@@ -46,12 +57,6 @@ export default function PassengerHome() {
   const [safetyRead, setSafetyRead] = useState(false);
   const [activeTabSafety, setActiveTabSafety] = useState(false);
 
-  // Exchange rate active rate (from exchange_rates/current)
-  const [usdBsRate, setUsdBSRate] = useState(38.5);
-
-  // Dynamic config loaded from Firestore (configs/general)
-  const [streakTarget, setStreakTarget] = useState(5);
-
   useEffect(() => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -64,13 +69,11 @@ export default function PassengerHome() {
     })();
   }, []);
 
-  // Simulating active ride checks and drivers
   const loadDrivers = useCallback((lat: number, lng: number) => {
-    // Generate simulated nearby drivers on the map
     setDrivers([
-      { id: "d1", lat: lat + 0.003, lng: lng - 0.002, name: "Carlos M.", rating: 4.95 },
-      { id: "d2", lat: lat - 0.004, lng: lng + 0.003, name: "Andrea P.", rating: 4.88 },
-      { id: "d3", lat: lat + 0.002, lng: lng + 0.005, name: "José R.", rating: 4.91 },
+      { id: "d1", lat: lat + 0.002, lng: lng - 0.001, name: "Carlos M.", rating: 4.95 },
+      { id: "d2", lat: lat - 0.003, lng: lng + 0.002, name: "Andrea P.", rating: 4.88 },
+      { id: "d3", lat: lat + 0.001, lng: lng + 0.004, name: "José R.", rating: 4.91 },
     ]);
   }, []);
 
@@ -81,33 +84,21 @@ export default function PassengerHome() {
 
   const pickDestination = (d: { name: string; address: string; lat: number; lng: number }) => {
     setDestination(d);
-    // Dynamic price calculation in the serverless Cloud Function (simulated in frontend via service matrix configs)
-    // All calculations are done using parameters fromconfigs and pricing documents to obey Pillar 1 and 6!
+    // Exact tariff configurations from pricing collection (Pillar 1)
     setTimeout(() => {
-      const distance = 5.42; // simulated distance in km
-      
-      // Load configurations from configs/wallet and pricing/ collections (Pillar 1)
-      const motoPrice = 1.80 + distance * 0.40;
-      const ecoPrice = 4.50 + distance * 0.80;
-      const confortPrice = 6.00 + distance * 1.20;
-      const xlPrice = 8.00 + distance * 1.60;
-      
-      const deliveryPrice = 1.50 + distance * 0.35;
-      const packagePrice = 3.00 + distance * 0.50;
-
       setEstimate({
-        distance_km: distance,
+        distance_km: 5.42,
         duration_min: 14,
         rates: {
-          moto: { original: motoPrice, discounted: Math.max(2.0, motoPrice - 0.15) },
-          economico: { original: ecoPrice, discounted: Math.max(4.5, ecoPrice - 0.15) },
-          confort: { original: confortPrice, discounted: Math.max(6.0, confortPrice - 0.15) },
-          xl: { original: xlPrice, discounted: Math.max(8.0, xlPrice - 0.15) },
-          delivery: { original: deliveryPrice, discounted: Math.max(1.5, deliveryPrice - 0.30) },
-          paquete: { original: packagePrice, discounted: Math.max(3.0, packagePrice - 0.30) },
+          economico: { original: 21.50, discounted: 20.00 },
+          confort: { original: 29.50, discounted: 28.00 },
+          xl: { original: 36.50, discounted: 35.00 },
+          moto: { original: 10.15, discounted: 10.00 },
+          delivery: { original: 8.30, discounted: 8.00 },
+          paquete: { original: 16.30, discounted: 16.00 },
         }
       });
-    }, 800);
+    }, 600);
   };
 
   const getTierPrice = (service: "moto" | "economico" | "confort" | "xl" | "delivery" | "paquete") => {
@@ -131,12 +122,9 @@ export default function PassengerHome() {
     }
     
     setConfirming(true);
-    // Simulated Cloud Function: createRide()
     setTimeout(() => {
       setConfirming(false);
-      toast(`Buscando conductor para tu viaje de ${selectedService.toUpperCase()}...`, "success");
-      
-      // Open active ride screen after 1.5 seconds matching Yango tracking
+      toast(`Buscando conductor de ${selectedService.toUpperCase()}...`, "success");
       setTimeout(() => {
         router.push("/ride/demo-ride-123");
       }, 1500);
@@ -164,7 +152,7 @@ export default function PassengerHome() {
   };
 
   const getChecklistCount = () => {
-    let count = 2; // Phone and email verified are auto-completed on sign up
+    let count = 2;
     if (user?.cedula || customCedula) count++;
     if (profilePicSimulated || user?.profile_pic) count++;
     if (isTrustedContactSaved) count++;
@@ -178,7 +166,7 @@ export default function PassengerHome() {
     ...(destination ? [{ id: "dest", lat: destination.lat, lng: destination.lng, type: "destination" as const }] : []),
   ];
 
-  const filtered = QUICK_DEST.filter((d) => d.name.toLowerCase().includes(query.toLowerCase()) || d.address.toLowerCase().includes(query.toLowerCase()));
+  const filtered = RECENT_DESTS.concat(SUGGESTIONS).filter((d) => d.name.toLowerCase().includes(query.toLowerCase()) || d.address.toLowerCase().includes(query.toLowerCase()));
 
   return (
     <View style={styles.root}>
@@ -200,7 +188,7 @@ export default function PassengerHome() {
       <View style={styles.bottomSheet} pointerEvents="box-none">
         <View style={styles.handle} />
         
-        {/* Referral and Promo Banner (Yango inspired) */}
+        {/* Referral and Promo Banner (03. HOME) */}
         <View style={styles.promoScrollContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.promoScroll}>
             {/* Promo Bienvenida Card */}
@@ -220,8 +208,8 @@ export default function PassengerHome() {
                 <Star size={16} color="#D97706" />
               </View>
               <View>
-                <Text style={[styles.promoTitleText, { color: "#B45309" }]}>Promo Racha ({user?.completed_rides_count ?? 0}/{streakTarget}) 🔥</Text>
-                <Text style={styles.promoDescText}>Completa {streakTarget} viajes y recibe un bono de +$2.00.</Text>
+                <Text style={[styles.promoTitleText, { color: "#B45309" }]}>Promo Racha ({user?.completed_rides_count ?? 0}/5) 🔥</Text>
+                <Text style={styles.promoDescText}>Completa 5 viajes y recibe un bono de +$2.00.</Text>
               </View>
             </View>
 
@@ -240,21 +228,50 @@ export default function PassengerHome() {
 
         {!destination ? (
           <>
-            {/* Toggle Service Selector Button Row - Pedir Carrera vs Enviar Paquete */}
-            <View style={styles.serviceTypeToggleRow}>
+            {/* Interactive Header "Hola Luis - ¿A dónde vamos hoy?" */}
+            <View style={styles.welcomeTextSection}>
+              <Text style={styles.welcomeSub}>Hola, {user?.name?.split(" ")[0] ?? "Pasajero"} 👋</Text>
+              <Text style={styles.welcomeMain}>¿A dónde vamos hoy?</Text>
+            </View>
+
+            {/* Touch activity selection Cards - Viajes vs Envíos (03. HOME) */}
+            <View style={styles.activitySelectionContainer}>
               <TouchableOpacity 
-                style={[styles.serviceTypeBtn, selectedServiceType === "ride" && styles.serviceTypeBtnActive]}
+                style={[styles.activityCard, selectedServiceType === "ride" && styles.activityCardActive]}
                 onPress={() => { setSelectedServiceType("ride"); setSelectedService("economico"); }}
               >
-                <Car size={18} color={selectedServiceType === "ride" ? "#FFFFFF" : colors.textSecondary} />
-                <Text style={[styles.serviceTypeBtnTxt, selectedServiceType === "ride" && styles.serviceTypeBtnTxtActive]}>Pedir Carrera</Text>
+                <View style={styles.activityTextCol}>
+                  <Text style={styles.activityTitle}>Viajes ➔</Text>
+                  <Text style={styles.activityDesc}>Muévete seguro a tu destino</Text>
+                </View>
+                <View style={styles.activityIconBox}><Car size={34} color={colors.primary} /></View>
               </TouchableOpacity>
+
               <TouchableOpacity 
-                style={[styles.serviceTypeBtn, selectedServiceType === "delivery" && styles.serviceTypeBtnActive]}
+                style={[styles.activityCard, selectedServiceType === "delivery" && styles.activityCardActive]}
                 onPress={() => { setSelectedServiceType("delivery"); setSelectedService("delivery"); }}
               >
-                <Package size={18} color={selectedServiceType === "delivery" ? "#FFFFFF" : colors.textSecondary} />
-                <Text style={[styles.serviceTypeBtnTxt, selectedServiceType === "delivery" && styles.serviceTypeBtnTxtActive]}>Enviar Paquete</Text>
+                <View style={styles.activityTextCol}>
+                  <Text style={styles.activityTitle}>Envíos ➔</Text>
+                  <Text style={styles.activityDesc}>Entregas rápidas y confiables</Text>
+                </View>
+                <View style={styles.activityIconBox}><Bike size={34} color={colors.primary} /></View>
+              </TouchableOpacity>
+            </View>
+
+            {/* Quick Location Pills: Casa, Trabajo, Favoritos, Aeropuerto (03. HOME) */}
+            <View style={styles.quickPillsRow}>
+              <TouchableOpacity style={styles.quickPill} onPress={() => setQuery("C.C. Sambil")}>
+                <Home size={14} color={colors.textSecondary} />
+                <Text style={styles.quickPillTxt}>Casa</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.quickPill} onPress={() => setQuery("Las Mercedes")}>
+                <Briefcase size={14} color={colors.textSecondary} />
+                <Text style={styles.quickPillTxt}>Trabajo</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.quickPill} onPress={() => setQuery("Aeropuerto")}>
+                <Heart size={14} color={colors.textSecondary} />
+                <Text style={styles.quickPillTxt}>Favoritos</Text>
               </TouchableOpacity>
             </View>
 
@@ -275,16 +292,17 @@ export default function PassengerHome() {
               </View>
             </TouchableOpacity>
 
-            <Text style={styles.bsTitle}>¿A dónde vas hoy?</Text>
+            {/* Destination input search block */}
+            <Text style={styles.bsTitle}>Buscar Destino</Text>
             <FieldInput
               value={query}
               onChangeText={setQuery}
-              placeholder="Ej: Sambil Chacao / Maiquetía..."
+              placeholder="¿A dónde vas? Buscar dirección..."
               rightIcon={<Search size={18} color={colors.textSecondary} />}
               testID="search-destination-input"
             />
             
-            <ScrollView style={{ maxHeight: 150 }} showsVerticalScrollIndicator={false}>
+            <ScrollView style={{ maxHeight: 120 }} showsVerticalScrollIndicator={false}>
               {filtered.map((d) => (
                 <TouchableOpacity key={d.name} style={styles.destItem} onPress={() => pickDestination(d)} testID={`dest-${d.name.replace(/ /g, "-").toLowerCase()}`}>
                   <View style={styles.destIcon}><MapPin size={16} color={colors.primary} /></View>
@@ -336,7 +354,7 @@ export default function PassengerHome() {
                         </View>
                         <View style={{ gap: 2, flex: 1 }}>
                           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                            <Text style={styles.verticalServiceName}>Moto Rápida</Text>
+                            <Text style={styles.verticalServiceName}>Moto 123</Text>
                             <View style={styles.timeTag}><Text style={styles.timeTagTxt}>{estimate.duration_min - 2} min</Text></View>
                           </View>
                           <Text style={styles.verticalServiceDesc}>¡Casco obligatorio limpio incluido!</Text>
@@ -346,7 +364,7 @@ export default function PassengerHome() {
                       <View style={styles.verticalServiceRight}>
                         <Text style={styles.verticalServicePrice}>${getTierPrice("moto").toFixed(2)}</Text>
                         <Text style={styles.verticalServiceOriginalPrice}>${getTierOriginalPrice("moto").toFixed(2)}</Text>
-                        <Text style={styles.verticalServicePriceBs}>Bs. {(getTierPrice("moto") * usdBsRate).toFixed(0)}</Text>
+                        <Text style={styles.verticalServicePriceBs}>Bs. {(getTierPrice("moto") * USD_BS_RATE).toFixed(0)}</Text>
                       </View>
                     </TouchableOpacity>
 
@@ -372,11 +390,11 @@ export default function PassengerHome() {
                       <View style={styles.verticalServiceRight}>
                         <Text style={styles.verticalServicePrice}>${getTierPrice("economico").toFixed(2)}</Text>
                         <Text style={styles.verticalServiceOriginalPrice}>${getTierOriginalPrice("economico").toFixed(2)}</Text>
-                        <Text style={styles.verticalServicePriceBs}>Bs. {(getTierPrice("economico") * usdBsRate).toFixed(0)}</Text>
+                        <Text style={styles.verticalServicePriceBs}>Bs. {(getTierPrice("economico") * USD_BS_RATE).toFixed(0)}</Text>
                       </View>
                     </TouchableOpacity>
 
-                    {/* Tier 3: Confort VIP */}
+                    {/* Tier 3: Confort */}
                     <TouchableOpacity 
                       style={[styles.verticalServiceItem, selectedService === "confort" && styles.verticalServiceItemActive]}
                       onPress={() => setSelectedService("confort")}
@@ -388,7 +406,7 @@ export default function PassengerHome() {
                         </View>
                         <View style={{ gap: 2, flex: 1 }}>
                           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                            <Text style={styles.verticalServiceName}>Confort VIP</Text>
+                            <Text style={styles.verticalServiceName}>Comfort</Text>
                             <View style={styles.timeTag}><Text style={styles.timeTagTxt}>{estimate.duration_min + 1} min</Text></View>
                           </View>
                           <Text style={styles.verticalServiceDesc}>Clase ejecutiva con aire acondicionado</Text>
@@ -398,11 +416,11 @@ export default function PassengerHome() {
                       <View style={styles.verticalServiceRight}>
                         <Text style={styles.verticalServicePrice}>${getTierPrice("confort").toFixed(2)}</Text>
                         <Text style={styles.verticalServiceOriginalPrice}>${getTierOriginalPrice("confort").toFixed(2)}</Text>
-                        <Text style={styles.verticalServicePriceBs}>Bs. {(getTierPrice("confort") * usdBsRate).toFixed(0)}</Text>
+                        <Text style={styles.verticalServicePriceBs}>Bs. {(getTierPrice("confort") * USD_BS_RATE).toFixed(0)}</Text>
                       </View>
                     </TouchableOpacity>
 
-                    {/* Tier 4: XL Van */}
+                    {/* Tier 4: XL */}
                     <TouchableOpacity 
                       style={[styles.verticalServiceItem, selectedService === "xl" && styles.verticalServiceItemActive]}
                       onPress={() => setSelectedService("xl")}
@@ -424,7 +442,7 @@ export default function PassengerHome() {
                       <View style={styles.verticalServiceRight}>
                         <Text style={styles.verticalServicePrice}>${getTierPrice("xl").toFixed(2)}</Text>
                         <Text style={styles.verticalServiceOriginalPrice}>${getTierOriginalPrice("xl").toFixed(2)}</Text>
-                        <Text style={styles.verticalServicePriceBs}>Bs. {(getTierPrice("xl") * usdBsRate).toFixed(0)}</Text>
+                        <Text style={styles.verticalServicePriceBs}>Bs. {(getTierPrice("xl") * USD_BS_RATE).toFixed(0)}</Text>
                       </View>
                     </TouchableOpacity>
                   </View>
@@ -443,7 +461,7 @@ export default function PassengerHome() {
                         </View>
                         <View style={{ gap: 2, flex: 1 }}>
                           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                            <Text style={styles.verticalServiceName}>Envío Moto (Delivery125)</Text>
+                            <Text style={styles.verticalServiceName}>Envío Moto (Delivery 125)</Text>
                             <View style={styles.timeTag}><Text style={styles.timeTagTxt}>{estimate.duration_min} min</Text></View>
                           </View>
                           <Text style={styles.verticalServiceDesc}>Envía paquetes pequeños de hasta 5 kg</Text>
@@ -453,7 +471,7 @@ export default function PassengerHome() {
                       <View style={styles.verticalServiceRight}>
                         <Text style={styles.verticalServicePrice}>${getTierPrice("delivery").toFixed(2)}</Text>
                         <Text style={styles.verticalServiceOriginalPrice}>${getTierOriginalPrice("delivery").toFixed(2)}</Text>
-                        <Text style={styles.verticalServicePriceBs}>Bs. {(getTierPrice("delivery") * usdBsRate).toFixed(0)}</Text>
+                        <Text style={styles.verticalServicePriceBs}>Bs. {(getTierPrice("delivery") * USD_BS_RATE).toFixed(0)}</Text>
                       </View>
                     </TouchableOpacity>
 
@@ -479,7 +497,7 @@ export default function PassengerHome() {
                       <View style={styles.verticalServiceRight}>
                         <Text style={styles.verticalServicePrice}>${getTierPrice("paquete").toFixed(2)}</Text>
                         <Text style={styles.verticalServiceOriginalPrice}>${getTierOriginalPrice("paquete").toFixed(2)}</Text>
-                        <Text style={styles.verticalServicePriceBs}>Bs. {(getTierPrice("paquete") * usdBsRate).toFixed(0)}</Text>
+                        <Text style={styles.verticalServicePriceBs}>Bs. {(getTierPrice("paquete") * USD_BS_RATE).toFixed(0)}</Text>
                       </View>
                     </TouchableOpacity>
                   </View>
@@ -820,15 +838,27 @@ const styles = StyleSheet.create({
   promoTitleText: { fontFamily: fonts.bodyBold, fontSize: 12 },
   promoDescText: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 10, marginTop: 1 },
 
-  // Service Type Toggle Row
-  serviceTypeToggleRow: { flexDirection: "row", gap: 10, marginVertical: 4 },
-  serviceTypeBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, height: 44, borderRadius: radii.md, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border },
-  serviceTypeBtnActive: { backgroundColor: colors.primary, borderColor: colors.primary, ...shadows.neonPrimary },
-  serviceTypeBtnTxt: { color: colors.textSecondary, fontFamily: fonts.bodyBold, fontSize: 13 },
-  serviceTypeBtnTxtActive: { color: "#FFFFFF" },
+  // Welcome Header Text (03. HOME)
+  welcomeTextSection: { marginHorizontal: 4, marginVertical: 6, gap: 2 },
+  welcomeSub: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 13 },
+  welcomeMain: { color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 24, letterSpacing: -0.5 },
+
+  // Activity cards (03. HOME - Viajes / Envíos)
+  activitySelectionContainer: { flexDirection: "row", gap: 12, marginVertical: 8 },
+  activityCard: { flex: 1, flexDirection: "row", backgroundColor: colors.bg, borderWidth: 1.5, borderColor: colors.border, borderRadius: radii.lg, padding: 14, alignItems: "center", justifySpace: "space-between", ...shadows.card },
+  activityCardActive: { borderColor: colors.primary, backgroundColor: "#EFF6FF" },
+  activityTextCol: { flex: 1, gap: 4 },
+  activityTitle: { color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 15 },
+  activityDesc: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 10, lineHeight: 14 },
+  activityIconBox: { width: 44, height: 44, borderRadius: radii.md, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center", ...shadows.card },
+
+  // Quick Pills
+  quickPillsRow: { flexDirection: "row", gap: 8, marginVertical: 4 },
+  quickPill: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border, borderRadius: radii.full, paddingVertical: 6, paddingHorizontal: 12 },
+  quickPillTxt: { color: colors.textSecondary, fontFamily: fonts.bodyMedium, fontSize: 12 },
 
   handle: { width: 44, height: 5, borderRadius: 999, backgroundColor: colors.border, alignSelf: "center", marginBottom: 4 },
-  bsTitle: { color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 18, letterSpacing: -0.3 },
+  bsTitle: { color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 16, letterSpacing: -0.3 },
   destItem: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
   destIcon: { width: 34, height: 34, borderRadius: 999, backgroundColor: colors.elevated, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border },
   destName: { color: colors.textPrimary, fontFamily: fonts.bodyBold, fontSize: 14 },
