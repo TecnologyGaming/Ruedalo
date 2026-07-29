@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, ActivityIndicator, Image } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
@@ -7,7 +7,8 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useAuth } from "@/src/lib/auth";
 import { colors, fonts, radii, spacing, shadows } from "@/src/lib/theme";
 import { toast } from "@/src/components/Toast";
-import { Phone, Shield, ArrowRight, X, Sparkles, Mail, Lock, User, ShieldAlert, ChevronRight, Eye, Play, Check, HelpCircle } from "lucide-react-native";
+import { Phone, Shield, ArrowRight, X, Mail, Lock, User, ChevronRight, Check, Sparkles } from "lucide-react-native";
+import { RuedaloArrowLogo, SteeringWheelIcon, GoogleLogo, AppleLogo, FacebookLogo } from "@/src/components/RuedaloIcons";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -107,19 +108,18 @@ export default function LoginScreen() {
         contentContainerStyle={styles.scroll}
         bottomOffset={20}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false} // Hide scrollbars (Pillar 8 validation)
       >
-        {/* Top Header - Left Aligned Arrow Logo, Ruedalo Bold, Muévete contigo (02. BIENVENIDO) */}
+        {/* Top Header - Matches the RIGHT image logo perfectly */}
         <View style={styles.topLogoArea}>
-          <View style={styles.logoBadgeCircle}>
-            <View style={styles.logoChevronSmall} />
-          </View>
+          <RuedaloArrowLogo size={50} color={colors.primary} />
           <View style={styles.brandTextBlock}>
             <Text style={styles.brandTitleText}>Ruedalo</Text>
             <Text style={styles.brandSubText}>Muévete contigo.</Text>
           </View>
         </View>
 
-        {/* Welcome Section */}
+        {/* Welcome Headline section */}
         <View style={styles.welcomeTextSection}>
           <Text style={styles.welcomeTitleText}>Bienvenido 👋</Text>
           <Text style={styles.welcomeDescText}>
@@ -133,7 +133,7 @@ export default function LoginScreen() {
             style={[styles.segmentBtn, activeTab === "passenger" && styles.segmentBtnActive]}
             onPress={() => setActiveTab("passenger")}
           >
-            <User size={14} color={activeTab === "passenger" ? "#FFFFFF" : "#1E293B"} />
+            <User size={15} color={activeTab === "passenger" ? "#FFFFFF" : "#475569"} />
             <Text style={[styles.segmentBtnTxt, activeTab === "passenger" && styles.segmentBtnTxtActive]}>Pasajero</Text>
           </TouchableOpacity>
           
@@ -141,7 +141,7 @@ export default function LoginScreen() {
             style={[styles.segmentBtn, activeTab === "driver" && styles.segmentBtnActive]}
             onPress={() => setActiveTab("driver")}
           >
-            <Eye size={14} color={activeTab === "driver" ? "#FFFFFF" : "#1E293B"} />
+            <SteeringWheelIcon size={15} color={activeTab === "driver" ? "#FFFFFF" : "#475569"} />
             <Text style={[styles.segmentBtnTxt, activeTab === "driver" && styles.segmentBtnTxtActive]}>Conductor</Text>
           </TouchableOpacity>
 
@@ -149,15 +149,15 @@ export default function LoginScreen() {
             style={[styles.segmentBtn, activeTab === "company" && styles.segmentBtnActive]}
             onPress={() => setActiveTab("company")}
           >
-            <Sparkles size={14} color={activeTab === "company" ? "#FFFFFF" : "#1E293B"} />
+            <Sparkles size={14} color={activeTab === "company" ? "#FFFFFF" : "#475569"} />
             <Text style={[styles.segmentBtnTxt, activeTab === "company" && styles.segmentBtnTxtActive]}>Empresa</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Phone Input Field (02. BIENVENIDO) */}
+        {/* Phone Input Field with phone icon and formatted input (02. BIENVENIDO) */}
         <View style={styles.phoneInputCard}>
           <View style={styles.phoneInputInner}>
-            <Phone size={18} color={colors.textSecondary} />
+            <Phone size={18} color="#94A3B8" style={styles.phoneIconLeft} />
             <TextInput
               style={styles.textInputMain}
               placeholder="Número de teléfono"
@@ -175,7 +175,7 @@ export default function LoginScreen() {
           </View>
         </View>
 
-        {/* Continue Button (02. BIENVENIDO) */}
+        {/* Continue Button matching colors and arrow right on right of button (02. BIENVENIDO) */}
         <TouchableOpacity 
           style={[styles.continueBtn, loading && { opacity: 0.7 }]} 
           onPress={onSendOtp}
@@ -185,10 +185,10 @@ export default function LoginScreen() {
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <>
+            <View style={styles.btnContent}>
               <Text style={styles.continueBtnTxt}>Continuar</Text>
               <ArrowRight size={18} color="#fff" style={styles.btnArrowRight} />
-            </>
+            </View>
           )}
         </TouchableOpacity>
 
@@ -199,18 +199,18 @@ export default function LoginScreen() {
           <View style={styles.dividerLine} />
         </View>
 
-        {/* Social Buttons: Google, Apple, Facebook (02. BIENVENIDO) */}
+        {/* Social Buttons with original high-end vector logos (Google, Apple, Facebook) */}
         <View style={styles.socialBtnRow}>
           <TouchableOpacity style={styles.socialBtn} onPress={() => toast("Google Auth...", "info")}>
-            <Text style={styles.socialEmoji}>🇬</Text>
+            <GoogleLogo size={18} />
             <Text style={styles.socialBtnTxt}>Google</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.socialBtn} onPress={() => toast("Apple Auth...", "info")}>
-            <Text style={styles.socialEmoji}></Text>
+            <AppleLogo size={18} />
             <Text style={styles.socialBtnTxt}>Apple</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.socialBtn} onPress={() => toast("Facebook Auth...", "info")}>
-            <Text style={styles.socialEmoji}>🇫</Text>
+            <FacebookLogo size={18} />
             <Text style={styles.socialBtnTxt}>Facebook</Text>
           </TouchableOpacity>
         </View>
@@ -226,7 +226,7 @@ export default function LoginScreen() {
             <Text style={styles.safetyTitle}>Tu seguridad es nuestra prioridad</Text>
             <Text style={styles.safetySub}>Viajes verificados, soporte 24/7{"\n"}y tecnología avanzada.</Text>
           </View>
-          <ChevronRight size={16} color={colors.primary} />
+          <ChevronRight size={16} color={colors.primary} style={styles.safetyChevronRight} />
         </View>
 
         {/* Navigation / Signup Links */}
@@ -238,8 +238,7 @@ export default function LoginScreen() {
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.helpBtn} onPress={() => toast("Canal de ayuda abierto", "info")}>
-            <HelpCircle size={16} color={colors.primary} />
-            <Text style={styles.helpBtnTxt}>¿Necesitas ayuda?</Text>
+            <Text style={styles.helpBtnTxt}>🎧 ¿Necesitas ayuda?</Text>
           </TouchableOpacity>
         </View>
 
@@ -328,33 +327,33 @@ const styles = StyleSheet.create({
   scroll: { flexGrow: 1, padding: spacing.md, gap: spacing.md, backgroundColor: "#FFFFFF" },
   
   topLogoArea: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14 },
-  logoBadgeCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" },
-  logoChevronSmall: { width: 14, height: 14, borderWidth: 3, borderColor: "#FFFFFF", borderLeftWidth: 0, borderBottomWidth: 0, transform: [{ rotate: "45deg" }], marginLeft: -3, marginTop: 1.5 },
   brandTextBlock: { gap: 1 },
-  brandTitleText: { fontSize: 24, fontFamily: fonts.headingBold, color: colors.primary, letterSpacing: -1 },
-  brandSubText: { fontSize: 13, fontFamily: fonts.body, color: colors.primary },
+  brandTitleText: { fontSize: 32, fontFamily: fonts.headingBold, color: colors.primary, letterSpacing: -1 },
+  brandSubText: { fontSize: 13, fontFamily: fonts.body, color: colors.primary, marginTop: -2 },
 
   welcomeTextSection: { marginTop: 16, marginBottom: 8, gap: 4 },
-  welcomeTitleText: { fontSize: 28, fontFamily: fonts.headingBold, color: colors.textPrimary, letterSpacing: -0.5 },
-  welcomeDescText: { fontSize: 14, fontFamily: fonts.body, color: colors.textSecondary, lineHeight: 22 },
+  welcomeTitleText: { fontSize: 32, fontFamily: fonts.headingBold, color: colors.textPrimary, letterSpacing: -0.5 },
+  welcomeDescText: { fontSize: 15, fontFamily: fonts.body, color: colors.textSecondary, lineHeight: 22 },
 
-  segmentContainer: { flexDirection: "row", backgroundColor: colors.bg, borderRadius: radii.lg, padding: 4, marginVertical: 10, borderWidth: 1, borderColor: colors.border },
+  segmentContainer: { flexDirection: "row", backgroundColor: "#F1F5F9", borderRadius: radii.lg, padding: 4, marginVertical: 10, borderWidth: 1, borderColor: colors.border },
   segmentBtn: { flex: 1, flexDirection: "row", height: 44, borderRadius: radii.md, alignItems: "center", justifyContent: "center", gap: 6 },
   segmentBtnActive: { backgroundColor: colors.primary, ...shadows.btn },
   segmentBtnTxt: { color: colors.textSecondary, fontFamily: fonts.bodyMedium, fontSize: 13 },
   segmentBtnTxtActive: { color: "#FFFFFF", fontFamily: fonts.bodyBold },
 
-  phoneInputCard: { backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, paddingHorizontal: 16, height: 54, justifyContent: "center", marginTop: 10 },
+  phoneInputCard: { backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, paddingHorizontal: 16, height: 54, justifyContent: "center", marginTop: 10 },
   phoneInputInner: { flexDirection: "row", alignItems: "center", gap: 10 },
+  phoneIconLeft: { marginRight: 2 },
   textInputMain: { flex: 1, color: colors.textPrimary, fontFamily: fonts.bodyMedium, fontSize: 15 },
   verticalDivider: { width: 1, height: 24, backgroundColor: colors.border },
   countryDropdown: { flexDirection: "row", alignItems: "center", gap: 4 },
   countryCodeTxt: { color: colors.textPrimary, fontFamily: fonts.bodyBold, fontSize: 14 },
   miniChevronDown: { width: 6, height: 6, borderWidth: 1.5, borderColor: colors.textPrimary, borderTopWidth: 0, borderLeftWidth: 0, transform: [{ rotate: "45deg" }], marginTop: -2, marginLeft: 2 },
 
-  continueBtn: { backgroundColor: colors.primary, height: 52, borderRadius: radii.lg, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 14, ...shadows.btn },
-  continueBtnTxt: { color: "#FFFFFF", fontFamily: fonts.bodyBold, fontSize: 15 },
-  btnArrowRight: { marginLeft: 2 },
+  continueBtn: { backgroundColor: colors.primary, height: 52, borderRadius: radii.md, alignItems: "center", justifyContent: "center", marginTop: 14, ...shadows.btn },
+  btnContent: { flexDirection: "row", alignItems: "center", width: "100%", paddingHorizontal: 20, justifyContent: "center", position: "relative" },
+  continueBtnTxt: { color: "#FFFFFF", fontFamily: fonts.bodyBold, fontSize: 16 },
+  btnArrowRight: { position: "absolute", right: 0 },
 
   orDividerRow: { flexDirection: "row", alignItems: "center", gap: 10, marginVertical: 12 },
   dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
@@ -362,7 +361,6 @@ const styles = StyleSheet.create({
 
   socialBtnRow: { flexDirection: "row", gap: 10 },
   socialBtn: { flex: 1, flexDirection: "row", height: 46, borderRadius: radii.md, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center", gap: 6 },
-  socialEmoji: { fontSize: 14, color: "#111317" },
   socialBtnTxt: { color: colors.textPrimary, fontFamily: fonts.bodyBold, fontSize: 12 },
 
   // Safety Card Banner (02. BIENVENIDO)
@@ -372,11 +370,12 @@ const styles = StyleSheet.create({
   safetyTextCol: { flex: 1, gap: 2 },
   safetyTitle: { color: colors.primary, fontFamily: fonts.bodyBold, fontSize: 13 },
   safetySub: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 11, lineHeight: 16 },
+  safetyChevronRight: { marginLeft: "auto" },
 
   navLinkContainer: { alignItems: "center", gap: 12, marginVertical: 8 },
   signUpLink: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 13 },
   signUpLinkHighlight: { color: colors.primary, fontFamily: fonts.bodyBold },
-  helpBtn: { flexDirection: "row", alignItems: "center", gap: 6 },
+  helpBtn: { flexDirection: "row", alignItems: "center" },
   helpBtnTxt: { color: colors.primary, fontFamily: fonts.bodyBold, fontSize: 13 },
 
   // Available in city Card (02. BIENVENIDO)
