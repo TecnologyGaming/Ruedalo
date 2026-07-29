@@ -1,0 +1,52 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+    }
+    
+    match /users/{userId}/stats/{statId} {
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow write: if false;
+    }
+    
+    match /rides/{rideId} {
+      allow read: if isAuthenticated() && (resource.data.passenger_id == request.auth.uid || resource.data.driver_id == request.auth.uid);
+      allow write: if false;
+    }
+    
+    match /deliveries/{deliveryId} {
+      allow read: if isAuthenticated() && (resource.data.sender_id == request.auth.uid || resource.data.driver_id == request.auth.uid);
+      allow write: if false;
+    }
+    
+    match /wallet_transactions/{txnId} {
+      allow read: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+      allow write: if false;
+    }
+    
+    match /service_types/{serviceId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+    
+    match /pricing/{serviceId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+    
+    match /configs/{configId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+  }
+}
