@@ -1,6 +1,6 @@
 // Ruedalo Design System v1.0 — Theme Specification
 export const colors = {
-  // Brand Palette
+  // Brand Palette (Yango & Ruedalo Inspired)
   primary: "#2563EB",       // Ruedalo Main Blue
   primaryDim: "#1E40AF",    // Ruedalo Secondary Blue
   success: "#10B981",       // Energetic Emerald Green (Wallet, Savings, Success)
@@ -63,21 +63,3 @@ export const shadows = {
     elevation: 4,
   },
 };
-
-// Map style for Google Maps (Premium Clear White styling matching Design System)
-export const lightMapStyle = [
-  { elementType: "geometry", stylers: [{ color: "#F8FAFC" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#475569" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#FFFFFF" }] },
-  { featureType: "administrative", elementType: "geometry", stylers: [{ visibility: "off" }] },
-  { featureType: "poi", stylers: [{ visibility: "off" }] },
-  { featureType: "transit", stylers: [{ visibility: "off" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#FFFFFF" }] },
-  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#E2E8F0" }] },
-  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#F1F5F9" }] },
-  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#64748B" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#C7D2FE" }] },
-  { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#F8FAFC" }] },
-];
-
-export const darkMapStyle = lightMapStyle; // Fallback to unified clear light theme
