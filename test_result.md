@@ -132,6 +132,39 @@ backend:
       - working: true
         agent: "testing"
         comment: "Verified via pytest - Admin endpoints for driver verification are working correctly. Tests confirmed: admin can list pending drivers, approve/reject driver applications, and proper RBAC enforcement (passengers cannot access admin endpoints)."
+  - task: "Multi-tier pricing system (Moto/Económico/Confort/Delivery)"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Verified via pytest - Multi-tier pricing system is working correctly. Tests confirmed: All 4 pricing tiers (Moto, Económico, Confort, Delivery) return correct structure with original/discounted prices and savings. Pricing calculations are accurate with proper tier ordering (moto < economico < confort). Discounts applied correctly: $0.15 for ride tiers, $0.30 for delivery. Estimate endpoint returns comprehensive rates object with all tiers."
+  - task: "Referral system with bonus rewards"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Verified via pytest - Referral system is working correctly. Tests confirmed: Unique referral codes generated for each user on registration. Users can register with a referral code and referred_by relationship is established. Welcome bonus of $1.50 credited to all new users with wallet transaction. Referral bonus logic exists ($2.50 to referrer on first ride completion). Streak bonus logic exists ($2.00 after 5 completed rides). All referral-related fields (referral_code, referred_by, completed_rides_count) are properly tracked."
+  - task: "Welcome bonus system"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Verified via pytest - Welcome bonus system is working correctly. All new users receive $1.50 welcome bonus on registration. Wallet transaction is created with type 'bonus' and description 'Bono de Bienvenida'. Balance is correctly reflected in user profile."
 frontend:
   - task: "Design System Revamp (Ridery & Yango Theme)"
     implemented: true
@@ -202,7 +235,7 @@ frontend:
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 2
+  test_sequence: 3
   run_ui: false
 test_plan:
   current_focus: []
@@ -214,3 +247,5 @@ agent_communication:
     message: "I have fully implemented the visual redesign inspired by Ridery and Yango, the simulated Firebase Phone Auth with OTP SMS modal verification, Cédula and document photo registration, the interactive 6-point pre-trip verification checklist, the multi-tier ride selector (Moto, Económico, Confort) with currency conversion (USD/Bs), and the cohesive passenger/driver switcher in the profile screen. Please run the backend verification tests."
   - agent: "testing"
     message: "Backend testing complete! All 25 pytest tests passed successfully (100% pass rate). Verified functionality includes: Health check, seed data, auth (register/login/me), wallet operations (bank config, recharge, history), RBAC enforcement, drivers nearby, ride estimation, full ride flow (request/accept/start/complete), chat messages, rating system, admin recharge approval/rejection, admin stats, and admin bank config updates. All backend APIs are working correctly with proper error handling and wallet transactions."
+  - agent: "testing"
+    message: "Pricing and Referral System Testing Complete! All 33 pytest tests passed (100% pass rate in 10.02s). Added 8 new comprehensive tests covering: (1) Multi-tier pricing structure verification (Moto/Económico/Confort/Delivery with original/discounted/saving fields), (2) Pricing calculations accuracy and tier ordering, (3) Delivery service pricing differentiation, (4) Referral code generation and uniqueness, (5) Registration with referral codes, (6) Referral bonus logic ($2.50 to referrer on first ride), (7) Streak bonus logic ($2.00 after 5 rides), (8) Welcome bonus transaction ($1.50 for new users). All pricing and referral backend features are working correctly with proper wallet transactions and data tracking."

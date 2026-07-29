@@ -76,6 +76,7 @@ class RegisterIn(BaseModel):
     role: Literal["passenger", "driver"] = "passenger"
     cedula: Optional[str] = None
     cedula_photo: Optional[str] = None
+    referred_by_code: Optional[str] = None
 
 class LoginIn(BaseModel):
     email: EmailStr
@@ -102,6 +103,9 @@ class UserOut(BaseModel):
     profile_pic: Optional[str] = None
     emergency_contact_name: Optional[str] = None
     emergency_contact_phone: Optional[str] = None
+    referral_code: Optional[str] = None
+    referred_by: Optional[str] = None
+    completed_rides_count: int = 0
 
 class ProfileUpdateIn(BaseModel):
     cedula: Optional[str] = None
@@ -135,6 +139,7 @@ class EstimateIn(BaseModel):
     origin_lng: float
     dest_lat: float
     dest_lng: float
+    service_type: Literal["ride", "delivery"] = "ride"
 
 class RideRequestIn(BaseModel):
     origin_lat: float
@@ -257,6 +262,9 @@ def user_to_out(u: dict) -> UserOut:
         profile_pic=u.get("profile_pic"),
         emergency_contact_name=u.get("emergency_contact_name"),
         emergency_contact_phone=u.get("emergency_contact_phone"),
+        referral_code=u.get("referral_code"),
+        referred_by=u.get("referred_by"),
+        completed_rides_count=int(u.get("completed_rides_count", 0)),
     )
 
 async def get_current_user(token: Optional[str] = Depends(oauth2_scheme)) -> dict:
@@ -289,11 +297,40 @@ def haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
     a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
     return 2 * R * math.asin(math.sqrt(a))
 
-def compute_fare(distance_km: float) -> tuple[float, float]:
-    """Returns (price_usd, duration_min). Base $1.50 + $0.80/km. Avg 25 km/h."""
-    price = round(1.5 + distance_km * 0.8, 2)
+def compute_advanced_fare(distance_km: float) -> dict:
     duration = round((distance_km / 25.0) * 60.0 + 3, 1)
-    return price, duration
+    
+    # 1. Moto: Tarifa base $1.80 + $0.40/km. Descuento $0.15
+    moto_original = round(1.80 + distance_km * 0.40, 2)
+    moto_discounted = max(1.00, round(moto_original - 0.15, 2))
+    
+    # 2. Económico (Carro): Tarifa base $4.50 + $0.80/km. Descuento $0.15
+    eco_original = round(4.50 + distance_km * 0.80, 2)
+    eco_discounted = max(3.00, round(eco_original - 0.15, 2))
+    
+    # 3. Confort VIP (Carro Premium): Tarifa base $6.00 + $1.20/km. Descuento $0.15
+    confort_original = round(6.00 + distance_km * 1.20, 2)
+    confort_discounted = max(4.50, round(confort_original - 0.15, 2))
+    
+    # 4. Delivery Express (Envío): Tarifa base $1.50 + $0.35/km. Descuento $0.30
+    delivery_original = round(1.50 + distance_km * 0.35, 2)
+    delivery_discounted = max(1.00, round(delivery_original - 0.30, 2))
+    
+    return {
+        "distance_km": round(distance_km, 2),
+        "duration_min": duration,
+        "moto": {"original": moto_original, "discounted": moto_discounted, "saving": 0.15},
+        "economico": {"original": eco_original, "discounted": eco_discounted, "saving": 0.15},
+        "confort": {"original": confort_original, "discounted": confort_discounted, "saving": 0.15},
+        "delivery": {"original": delivery_original, "discounted": delivery_discounted, "saving": 0.30},
+    }
+
+def compute_fare(distance_km: float) -> tuple[float, float]:
+    """Fallback traditional compute_fare for legacy tests."""
+    original = round(4.50 + distance_km * 0.80, 2)
+    discounted = max(3.00, round(original - 0.15, 2))
+    duration = round((distance_km / 25.0) * 60.0 + 3, 1)
+    return discounted, duration
 
 # ============================================================
 # Seed
@@ -412,6 +449,23 @@ async def register(body: RegisterIn):
     if await users_col.find_one({"email": body.email}):
         raise HTTPException(status_code=409, detail="Correo ya registrado")
     user_id = str(uuid.uuid4())
+    
+    # Generate unique referral code
+    first_word = body.name.split()[0].replace("-","").replace(".","").upper() if body.name else "USER"
+    rand_suffix = str(uuid.uuid4().hex[:4]).upper()
+    ref_code = f"{first_word}{rand_suffix}"
+    
+    # Check if registered with a referral code
+    ref_by_id = None
+    if body.referred_by_code:
+        ref_user = await users_col.find_one({"referral_code": body.referred_by_code.strip().upper()})
+        if ref_user:
+            ref_by_id = ref_user["id"]
+            logger.info(f"User {user_id} was referred by {ref_by_id}")
+            
+    # Welcome Bonus promo: $1.50 USD credited to wallet!
+    welcome_balance = 1.50
+    
     doc = {
         "id": user_id,
         "email": body.email,
@@ -419,7 +473,7 @@ async def register(body: RegisterIn):
         "phone": body.phone,
         "password_hash": hash_password(body.password),
         "role": body.role,
-        "wallet_balance": 0.0,
+        "wallet_balance": welcome_balance,
         "is_online": False,
         "rating_avg": 5.0,
         "cedula": body.cedula,
@@ -432,9 +486,24 @@ async def register(body: RegisterIn):
         "profile_pic": None,
         "emergency_contact_name": None,
         "emergency_contact_phone": None,
+        "referral_code": ref_code,
+        "referred_by": ref_by_id,
+        "completed_rides_count": 0,
         "created_at": utcnow_iso(),
     }
     await users_col.insert_one(doc)
+    
+    # Insert Welcome Bonus transaction
+    await wallet_txns_col.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "amount": welcome_balance,
+        "type": "bonus",
+        "ride_id": None,
+        "description": "Bono de Bienvenida",
+        "created_at": utcnow_iso(),
+    })
+    
     user = await users_col.find_one({"id": user_id}, {"_id": 0})
     token = create_token(user_id, body.role)
     return TokenOut(access_token=token, user=user_to_out(user))
@@ -599,8 +668,14 @@ async def set_online(body: OnlineIn, user=Depends(require_roles("driver"))):
 @api.post("/rides/estimate")
 async def estimate(body: EstimateIn, _=Depends(get_current_user)):
     dist = haversine_km(body.origin_lat, body.origin_lng, body.dest_lat, body.dest_lng)
-    price, dur = compute_fare(dist)
-    return {"distance_km": round(dist, 2), "duration_min": dur, "price_usd": price}
+    matrix = compute_advanced_fare(dist)
+    legacy_price = matrix["economico"]["discounted"] if body.service_type == "ride" else matrix["delivery"]["discounted"]
+    return {
+        "distance_km": round(dist, 2),
+        "duration_min": matrix["duration_min"],
+        "price_usd": legacy_price,
+        "rates": matrix
+    }
 
 def ride_to_out(r: dict) -> dict:
     return {k: v for k, v in r.items() if k != "_id"}
@@ -726,9 +801,11 @@ async def complete_ride(ride_id: str, user=Depends(require_roles("driver"))):
     if ride["status"] not in ("accepted", "in_progress"):
         raise HTTPException(status_code=409, detail="Estado inválido")
     price = float(ride["price_usd"])
+    
     # debit passenger, credit driver
     await users_col.update_one({"id": ride["passenger_id"]}, {"$inc": {"wallet_balance": -price}})
     await users_col.update_one({"id": user["id"]}, {"$inc": {"wallet_balance": price * 0.85}})
+    
     await wallet_txns_col.insert_one({
         "id": str(uuid.uuid4()),
         "user_id": ride["passenger_id"],
@@ -747,6 +824,43 @@ async def complete_ride(ride_id: str, user=Depends(require_roles("driver"))):
         "description": f"Ganancia viaje {ride['passenger_name']}",
         "created_at": utcnow_iso(),
     })
+    
+    # Core Referral and Streak Promotion Engines
+    passenger = await users_col.find_one({"id": ride["passenger_id"]})
+    if passenger:
+        current_count = int(passenger.get("completed_rides_count", 0))
+        new_count = current_count + 1
+        await users_col.update_one({"id": ride["passenger_id"]}, {"$set": {"completed_rides_count": new_count}})
+        
+        # 1. Referral Reward Rule: First ride completed! Owner of referral code receives $2.50
+        if current_count == 0 and passenger.get("referred_by"):
+            referrer_id = passenger["referred_by"]
+            await users_col.update_one({"id": referrer_id}, {"$inc": {"wallet_balance": 2.50}})
+            await wallet_txns_col.insert_one({
+                "id": str(uuid.uuid4()),
+                "user_id": referrer_id,
+                "amount": 2.50,
+                "type": "referral_bonus",
+                "ride_id": ride_id,
+                "description": f"Bono por referir a {passenger['name']}",
+                "created_at": utcnow_iso(),
+            })
+            logger.info(f"Referrer {referrer_id} credited $2.50 for referral {passenger['id']}")
+            
+        # 2. Promo Racha (Streak Promo): Completed 5 services! Passenger receives $2.00
+        if new_count == 5:
+            await users_col.update_one({"id": ride["passenger_id"]}, {"$inc": {"wallet_balance": 2.00}})
+            await wallet_txns_col.insert_one({
+                "id": str(uuid.uuid4()),
+                "user_id": ride["passenger_id"],
+                "amount": 2.00,
+                "type": "streak_bonus",
+                "ride_id": ride_id,
+                "description": "Bono Promo Racha (5 servicios)",
+                "created_at": utcnow_iso(),
+            })
+            logger.info(f"Passenger {ride['passenger_id']} credited $2.00 for completing 5 services")
+
     await rides_col.update_one(
         {"id": ride_id},
         {"$set": {"status": "completed", "completed_at": utcnow_iso()}},

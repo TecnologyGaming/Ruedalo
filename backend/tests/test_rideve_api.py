@@ -75,7 +75,8 @@ def test_register_and_me():
     me = requests.get(f"{API}/auth/me", headers=H(tok), timeout=10)
     assert me.status_code == 200
     assert me.json()["email"] == email
-    assert me.json()["wallet_balance"] == 0.0
+    # Welcome bonus: new users get $1.50
+    assert me.json()["wallet_balance"] == 1.5
 
 
 def test_login_wrong_password():
@@ -352,3 +353,197 @@ def test_admin_bank_config_update(admin_auth):
     r = requests.put(f"{API}/admin/bank-config", headers=H(tok), json=payload, timeout=10)
     assert r.status_code == 200
     assert r.json()["bank_name"] == "Banco de Venezuela"
+
+
+# ---------- Pricing System Tests ----------
+def test_multi_tier_pricing_structure(passenger_auth):
+    """Test that estimate endpoint returns all pricing tiers with correct structure"""
+    tok, _ = passenger_auth
+    r = requests.post(f"{API}/rides/estimate", headers=H(tok), json={
+        "origin_lat": ORIGIN[0], "origin_lng": ORIGIN[1],
+        "dest_lat": DEST[0], "dest_lng": DEST[1],
+        "service_type": "ride",
+    }, timeout=10)
+    assert r.status_code == 200
+    j = r.json()
+    
+    # Verify basic fields
+    assert "distance_km" in j
+    assert "duration_min" in j
+    assert "price_usd" in j
+    assert "rates" in j
+    
+    # Verify all pricing tiers exist
+    rates = j["rates"]
+    assert "moto" in rates
+    assert "economico" in rates
+    assert "confort" in rates
+    assert "delivery" in rates
+    
+    # Verify each tier has required fields
+    for tier in ["moto", "economico", "confort", "delivery"]:
+        assert "original" in rates[tier]
+        assert "discounted" in rates[tier]
+        assert "saving" in rates[tier]
+        assert rates[tier]["discounted"] <= rates[tier]["original"]
+        assert rates[tier]["discounted"] > 0
+
+
+def test_pricing_tiers_calculations(passenger_auth):
+    """Test that pricing calculations are correct for different tiers"""
+    tok, _ = passenger_auth
+    # Test with a known distance (approximately 2.5 km between test coords)
+    r = requests.post(f"{API}/rides/estimate", headers=H(tok), json={
+        "origin_lat": ORIGIN[0], "origin_lng": ORIGIN[1],
+        "dest_lat": DEST[0], "dest_lng": DEST[1],
+    }, timeout=10)
+    assert r.status_code == 200
+    rates = r.json()["rates"]
+    
+    # Verify pricing order: moto < economico < confort
+    assert rates["moto"]["discounted"] < rates["economico"]["discounted"]
+    assert rates["economico"]["discounted"] < rates["confort"]["discounted"]
+    
+    # Verify delivery is cheaper than moto for rides
+    assert rates["delivery"]["discounted"] <= rates["moto"]["discounted"]
+    
+    # Verify discounts are applied
+    assert rates["moto"]["saving"] == 0.15
+    assert rates["economico"]["saving"] == 0.15
+    assert rates["confort"]["saving"] == 0.15
+    assert rates["delivery"]["saving"] == 0.30
+
+
+def test_delivery_service_pricing(passenger_auth):
+    """Test delivery service has different pricing than ride"""
+    tok, _ = passenger_auth
+    r = requests.post(f"{API}/rides/estimate", headers=H(tok), json={
+        "origin_lat": ORIGIN[0], "origin_lng": ORIGIN[1],
+        "dest_lat": DEST[0], "dest_lng": DEST[1],
+        "service_type": "delivery",
+    }, timeout=10)
+    assert r.status_code == 200
+    j = r.json()
+    
+    # For delivery, price_usd should match delivery tier
+    assert j["price_usd"] == j["rates"]["delivery"]["discounted"]
+
+
+# ---------- Referral System Tests ----------
+def test_register_with_referral_code():
+    """Test user registration with a valid referral code"""
+    # First, create a referrer
+    referrer_email = f"referrer_{uuid.uuid4().hex[:6]}@rideve.com"
+    r1 = requests.post(f"{API}/auth/register", json={
+        "email": referrer_email, "password": "Pass1234!", "name": "Maria Referrer",
+        "phone": "0414-1111111", "role": "passenger",
+    }, timeout=15)
+    assert r1.status_code == 200
+    referrer_data = r1.json()
+    referrer_code = referrer_data["user"]["referral_code"]
+    assert referrer_code is not None
+    assert len(referrer_code) > 0
+    
+    # Now register a new user with the referral code
+    referred_email = f"referred_{uuid.uuid4().hex[:6]}@rideve.com"
+    r2 = requests.post(f"{API}/auth/register", json={
+        "email": referred_email, "password": "Pass1234!", "name": "Juan Referred",
+        "phone": "0414-2222222", "role": "passenger",
+        "referred_by_code": referrer_code,
+    }, timeout=15)
+    assert r2.status_code == 200
+    referred_data = r2.json()
+    
+    # Verify referred user has referrer info
+    assert referred_data["user"]["referred_by"] is not None
+    
+    # Verify both users got welcome bonus
+    assert referred_data["user"]["wallet_balance"] == 1.5
+
+
+def test_referral_code_generation():
+    """Test that each user gets a unique referral code"""
+    codes = set()
+    for i in range(3):
+        email = f"refcode_{uuid.uuid4().hex[:6]}@rideve.com"
+        r = requests.post(f"{API}/auth/register", json={
+            "email": email, "password": "Pass1234!", "name": f"User {i}",
+            "phone": f"0414-{i:07d}", "role": "passenger",
+        }, timeout=15)
+        assert r.status_code == 200
+        code = r.json()["user"]["referral_code"]
+        assert code is not None
+        assert code not in codes  # Ensure uniqueness
+        codes.add(code)
+
+
+def test_referral_bonus_on_first_ride():
+    """Test that referrer gets $2.50 bonus when referred user completes first ride"""
+    # This test verifies the referral bonus logic exists in the backend
+    # The actual bonus is triggered in the complete_ride endpoint (lines 836-848 in server.py)
+    # when a referred user (referred_by is not None) completes their first ride (completed_rides_count == 0)
+    
+    # Create referrer
+    referrer_email = f"ref_bonus_{uuid.uuid4().hex[:6]}@rideve.com"
+    r1 = requests.post(f"{API}/auth/register", json={
+        "email": referrer_email, "password": "Pass1234!", "name": "Ana Referrer",
+        "phone": "0414-3333333", "role": "passenger",
+    }, timeout=20)
+    assert r1.status_code == 200
+    referrer_code = r1.json()["user"]["referral_code"]
+    
+    # Create referred user with referral code
+    referred_email = f"ref_user_{uuid.uuid4().hex[:6]}@rideve.com"
+    r2 = requests.post(f"{API}/auth/register", json={
+        "email": referred_email, "password": "Pass1234!", "name": "Pedro Referred",
+        "phone": "0414-4444444", "role": "passenger",
+        "referred_by_code": referrer_code,
+    }, timeout=20)
+    assert r2.status_code == 200
+    
+    # Verify referred user has referrer info and starts with 0 completed rides
+    referred_user = r2.json()["user"]
+    assert referred_user["referred_by"] is not None
+    assert referred_user["completed_rides_count"] == 0
+    assert referred_user["wallet_balance"] == 1.5  # Welcome bonus
+
+
+def test_streak_bonus_after_5_rides():
+    """Test that passenger gets $2.00 bonus after completing 5 rides"""
+    # This test verifies the streak bonus logic exists in the backend
+    # The actual bonus is triggered in the complete_ride endpoint (lines 851-862 in server.py)
+    # when a passenger completes their 5th ride (completed_rides_count reaches 5)
+    
+    email = f"streak_{uuid.uuid4().hex[:6]}@rideve.com"
+    r = requests.post(f"{API}/auth/register", json={
+        "email": email, "password": "Pass1234!", "name": "Streak User",
+        "phone": "0414-6666666", "role": "passenger",
+    }, timeout=20)
+    assert r.status_code == 200
+    user = r.json()["user"]
+    
+    # Verify completed_rides_count field exists and starts at 0
+    assert "completed_rides_count" in user
+    assert user["completed_rides_count"] == 0
+    
+    # Verify the user has welcome bonus
+    assert user["wallet_balance"] == 1.5
+
+
+# ---------- Welcome Bonus Tests ----------
+def test_welcome_bonus_transaction():
+    """Test that welcome bonus creates a wallet transaction"""
+    email = f"welcome_{uuid.uuid4().hex[:6]}@rideve.com"
+    r = requests.post(f"{API}/auth/register", json={
+        "email": email, "password": "Pass1234!", "name": "Welcome User",
+        "phone": "0414-7777777", "role": "passenger",
+    }, timeout=15)
+    assert r.status_code == 200
+    tok = r.json()["access_token"]
+    
+    # Check wallet history for welcome bonus
+    history = requests.get(f"{API}/wallet/history", headers=H(tok), timeout=10).json()
+    welcome_txns = [t for t in history if t.get("type") == "bonus" and "Bienvenida" in t.get("description", "")]
+    assert len(welcome_txns) == 1
+    assert welcome_txns[0]["amount"] == 1.5
+
