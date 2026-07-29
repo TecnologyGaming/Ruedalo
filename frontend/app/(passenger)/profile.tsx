@@ -2,7 +2,7 @@ import { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { LogOut, User, Mail, Phone, Car, BookOpen, ShieldCheck, HelpCircle, SwitchCamera, ArrowRight, X, Check, FileText, Settings, MapPin } from "lucide-react-native";
+import { LogOut, User, Mail, Phone, Car, BookOpen, ShieldCheck, HelpCircle, SwitchCamera, ArrowRight, X, Check, FileText, Settings, MapPin, Sparkles } from "lucide-react-native";
 
 import { useAuth } from "@/src/lib/auth";
 import { colors, fonts, radii, spacing, shadows } from "@/src/lib/theme";
@@ -192,12 +192,27 @@ export function ProfileScreen() {
           <Row icon={<Mail size={16} color={colors.primary} />} label="Correo Electrónico" value={user?.email ?? ""} />
           <Row icon={<BookOpen size={16} color={colors.primary} />} label="Cédula de Identidad" value={user?.cedula ?? "No registrada"} />
           <Row icon={<Phone size={16} color={colors.primary} />} label="Teléfono de Contacto" value={user?.phone ?? ""} />
+          <Row icon={<Sparkles size={16} color={colors.primary} />} label="Mi Código de Referido" value={user?.referral_code ?? ""} />
           {user?.driver_status === "approved" && (
             <>
               <Row icon={<Car size={16} color={colors.secondary} />} label="Vehículo Registrado" value={`${user?.vehicle_model} (${user?.vehicle_year})`} />
               <Row icon={<FileText size={16} color={colors.secondary} />} label="Placa" value={user?.plate ?? ""} />
             </>
           )}
+        </View>
+
+        {/* Share Referral Code Section (Yango inspired) */}
+        <View style={styles.shareReferralContainer}>
+          <Text style={styles.shareTitle}>Invita amigos y gana saldo 🎁</Text>
+          <Text style={styles.shareDesc}>Comparte tu código único y recibe +$2.50 USD de regalo cuando tu referido complete su primer viaje.</Text>
+          <TouchableOpacity 
+            style={styles.shareBtn} 
+            onPress={() => {
+              toast(`Código copiado: ${user?.referral_code}`, "success");
+            }}
+          >
+            <Text style={styles.shareBtnTxt}>Copiar mi código: {user?.referral_code}</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.actions}>
@@ -327,6 +342,13 @@ const styles = StyleSheet.create({
   yangoActionBtn: { flex: 1, alignItems: "center", gap: 6 },
   yangoActionIconBox: { width: 44, height: 44, borderRadius: radii.full, backgroundColor: colors.bg, alignItems: "center", justifyContent: "center", borderWidth: 1.5, borderColor: colors.border, ...shadows.card },
   yangoActionLabel: { color: colors.textPrimary, fontFamily: fonts.bodyMedium, fontSize: 11, textAlign: "center" },
+
+  // Referral Card
+  shareReferralContainer: { margin: spacing.md, backgroundColor: "#ECFDF5", borderRadius: radii.lg, padding: 16, borderWidth: 1, borderColor: "#A7F3D0", gap: 8, ...shadows.card },
+  shareTitle: { color: "#047857", fontFamily: fonts.headingBold, fontSize: 14 },
+  shareDesc: { color: "#065F46", fontFamily: fonts.body, fontSize: 12, lineHeight: 18 },
+  shareBtn: { backgroundColor: "#059669", height: 40, borderRadius: radii.md, alignItems: "center", justifyContent: "center", marginTop: 4 },
+  shareBtnTxt: { color: "#FFFFFF", fontFamily: fonts.bodyBold, fontSize: 12 },
 
   card: { marginHorizontal: spacing.md, padding: spacing.md, borderRadius: radii.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, gap: 14, ...shadows.card },
   row: { flexDirection: "row", alignItems: "center", gap: 14 },

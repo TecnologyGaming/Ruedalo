@@ -9,7 +9,7 @@ import { colors, fonts, radii, spacing, shadows } from "@/src/lib/theme";
 import { NeonButton } from "@/src/components/NeonButton";
 import { FieldInput } from "@/src/components/FieldInput";
 import { toast } from "@/src/components/Toast";
-import { ArrowLeft, User, Car, UploadCloud, CheckCircle2, Lock, Mail, Phone, BookOpen } from "lucide-react-native";
+import { ArrowLeft, User, Car, UploadCloud, CheckCircle2, Lock, Mail, Phone, BookOpen, Sparkles } from "lucide-react-native";
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -20,6 +20,7 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState("");
   const [cedula, setCedula] = useState("");
   const [cedulaPhoto, setCedulaPhoto] = useState<string | null>(null);
+  const [referralCode, setReferralCode] = useState("");
   const [role, setRole] = useState<"passenger" | "driver">("passenger");
   const [loading, setLoading] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(false);
@@ -55,7 +56,8 @@ export default function RegisterScreen() {
         password,
         role,
         cedula: cedula.trim(),
-        cedula_photo: cedulaPhoto
+        cedula_photo: cedulaPhoto,
+        referred_by_code: referralCode.trim()
       } as any);
       toast(`Cuenta creada con éxito. ¡Bienvenido ${u.name}!`, "success");
       if (u.role === "passenger") router.replace("/(passenger)");
@@ -153,6 +155,16 @@ export default function RegisterScreen() {
             placeholder="Ej. V-12345678" 
             leftIcon={<BookOpen size={18} color={colors.textSecondary} />}
             testID="register-cedula-input" 
+          />
+
+          <FieldInput 
+            label="Código de Referido (Opcional)" 
+            value={referralCode} 
+            onChangeText={setReferralCode} 
+            placeholder="Ej: PABLO123" 
+            autoCapitalize="characters"
+            leftIcon={<Sparkles size={18} color={colors.textSecondary} />}
+            testID="register-referral-input" 
           />
 
           <View style={styles.uploadContainer}>

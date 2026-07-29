@@ -36,7 +36,8 @@ export default function PassengerHome() {
   const [query, setQuery] = useState("");
   
   // Custom states for premium features
-  const [selectedService, setSelectedService] = useState<"moto" | "economico" | "confort">("economico");
+  const [selectedServiceType, setSelectedServiceType] = useState<"ride" | "delivery">("ride");
+  const [selectedService, setSelectedService] = useState<"moto" | "economico" | "confort" | "delivery">("economico");
   const [instructions, setInputInstructions] = useState("");
   const [payMethod, setPayMethod] = useState<"wallet" | "cash">("wallet");
   const [orderForOthers, setOrderForOthers] = useState(false);
@@ -99,9 +100,9 @@ export default function PassengerHome() {
   const pickDestination = async (d: { name: string; address: string; lat: number; lng: number }) => {
     setDestination(d);
     try {
-      const est = await api<{ price_usd: number; distance_km: number; duration_min: number }>("/rides/estimate", {
+      const est = await api<{ price_usd: number; distance_km: number; duration_min: number; rates: any }>("/rides/estimate", {
         method: "POST",
-        body: { origin_lat: myLoc.lat, origin_lng: myLoc.lng, dest_lat: d.lat, dest_lng: d.lng },
+        body: { origin_lat: myLoc.lat, origin_lng: myLoc.lng, dest_lat: d.lat, dest_lng: d.lng, service_type: selectedServiceType }
       });
       setEstimate(est);
     } catch (e: any) {
@@ -109,12 +110,15 @@ export default function PassengerHome() {
     }
   };
 
-  // Compute tier price based on base estimate
-  const getTierPrice = (service: "moto" | "economico" | "confort") => {
-    if (!estimate) return 0;
-    if (service === "moto") return Math.max(2.0, roundPrice(estimate.price_usd * 0.6));
-    if (service === "confort") return Math.max(6.0, roundPrice(estimate.price_usd * 1.35));
-    return estimate.price_usd; // economico
+  // Compute tier price based on advanced backend rates matrix
+  const getTierPrice = (service: "moto" | "economico" | "confort" | "delivery") => {
+    if (!estimate || !estimate.rates) return 0;
+    return estimate.rates[service]?.discounted ?? 0;
+  };
+
+  const getTierOriginalPrice = (service: "moto" | "economico" | "confort" | "delivery") => {
+    if (!estimate || !estimate.rates) return 0;
+    return estimate.rates[service]?.original ?? 0;
   };
 
   const roundPrice = (num: number) => {
@@ -228,8 +232,65 @@ export default function PassengerHome() {
 
       <View style={styles.bottomSheet} pointerEvents="box-none">
         <View style={styles.handle} />
+        
+        {/* Referral and Promo Banner (Yango inspired) */}
+        <View style={styles.promoScrollContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.promoScroll}>
+            {/* Promo Bienvenida Card */}
+            <View style={[styles.promoCard, { backgroundColor: "#EFF6FF", borderColor: "#BFDBFE" }]}>
+              <View style={styles.promoIconContainer}>
+                <Sparkles size={16} color="#3B82F6" />
+              </View>
+              <View>
+                <Text style={[styles.promoTitleText, { color: "#1D4ED8" }]}>Promo Bienvenida 🎉</Text>
+                <Text style={styles.promoDescText}>+$1.50 de regalo agregados a tu Wallet.</Text>
+              </View>
+            </View>
+
+            {/* Promo Racha Card */}
+            <View style={[styles.promoCard, { backgroundColor: "#FFFBEB", borderColor: "#FDE68A" }]}>
+              <View style={styles.promoIconContainer}>
+                <Star size={16} color="#D97706" />
+              </View>
+              <View>
+                <Text style={[styles.promoTitleText, { color: "#B45309" }]}>Promo Racha ({user?.completed_rides_count ?? 0}/5) 🔥</Text>
+                <Text style={styles.promoDescText}>Completa 5 viajes y recibe un bono de +$2.00.</Text>
+              </View>
+            </View>
+
+            {/* Refer a Friend Card */}
+            <View style={[styles.promoCard, { backgroundColor: "#ECFDF5", borderColor: "#A7F3D0" }]}>
+              <View style={styles.promoIconContainer}>
+                <User size={16} color="#059669" />
+              </View>
+              <View>
+                <Text style={[styles.promoTitleText, { color: "#047857" }]}>Refiere a un amigo 🤝</Text>
+                <Text style={styles.promoDescText}>¡Gana $2.50 por cada amigo que complete su 1er viaje!</Text>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+
         {!destination ? (
           <>
+            {/* Toggle Service Selector Button Row - Pedir Carrera vs Enviar Paquete */}
+            <View style={styles.serviceTypeToggleRow}>
+              <TouchableOpacity 
+                style={[styles.serviceTypeBtn, selectedServiceType === "ride" && styles.serviceTypeBtnActive]}
+                onPress={() => { setSelectedServiceType("ride"); setSelectedService("economico"); }}
+              >
+                <Car size={18} color={selectedServiceType === "ride" ? "#FFFFFF" : colors.textSecondary} />
+                <Text style={[styles.serviceTypeBtnTxt, selectedServiceType === "ride" && styles.serviceTypeBtnTxtActive]}>Pedir Carrera</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.serviceTypeBtn, selectedServiceType === "delivery" && styles.serviceTypeBtnActive]}
+                onPress={() => { setSelectedServiceType("delivery"); setSelectedService("delivery"); }}
+              >
+                <Bike size={18} color={selectedServiceType === "delivery" ? "#FFFFFF" : colors.textSecondary} />
+                <Text style={[styles.serviceTypeBtnTxt, selectedServiceType === "delivery" && styles.serviceTypeBtnTxtActive]}>Enviar Paquete</Text>
+              </TouchableOpacity>
+            </View>
+
             {/* Safety Verification Banner - Yango Style */}
             <TouchableOpacity style={styles.safetyBanner} onPress={() => setVerifyModal(true)} testID="safety-verification-banner">
               <View style={styles.safetyBannerLeft}>
@@ -299,80 +360,116 @@ export default function PassengerHome() {
 
             {estimate ? (
               <View style={{ gap: 10 }}>
-                {/* Service Categories Cards (Yango Vertical List Layout) */}
-                <View style={styles.servicesVerticalList}>
-                  {/* Tier 1: Moto */}
-                  <TouchableOpacity 
-                    style={[styles.verticalServiceItem, selectedService === "moto" && styles.verticalServiceItemActive]}
-                    onPress={() => setSelectedService("moto")}
-                    testID="service-moto-btn"
-                  >
-                    <View style={styles.verticalServiceLeft}>
-                      <View style={[styles.verticalServiceIconBox, selectedService === "moto" && { backgroundColor: "#FEE2E2" }]}>
-                        <Bike size={24} color={selectedService === "moto" ? colors.primary : colors.textSecondary} />
-                      </View>
-                      <View style={{ gap: 2 }}>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                          <Text style={styles.verticalServiceName}>Moto Rápida</Text>
-                          <View style={styles.timeTag}><Text style={styles.timeTagTxt}>{estimate.duration_min - 2} min</Text></View>
+                {selectedServiceType === "ride" ? (
+                  /* Service Categories Cards (Yango Vertical List Layout) */
+                  <View style={styles.servicesVerticalList}>
+                    {/* Tier 1: Moto */}
+                    <TouchableOpacity 
+                      style={[styles.verticalServiceItem, selectedService === "moto" && styles.verticalServiceItemActive]}
+                      onPress={() => setSelectedService("moto")}
+                      testID="service-moto-btn"
+                    >
+                      <View style={styles.verticalServiceLeft}>
+                        <View style={[styles.verticalServiceIconBox, selectedService === "moto" && { backgroundColor: "#FEE2E2" }]}>
+                          <Bike size={24} color={selectedService === "moto" ? colors.primary : colors.textSecondary} />
                         </View>
-                        <Text style={styles.verticalServiceDesc}>¡Casco obligatorio limpio incluido!</Text>
+                        <View style={{ gap: 2, flex: 1 }}>
+                          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                            <Text style={styles.verticalServiceName}>Moto Rápida</Text>
+                            <View style={styles.timeTag}><Text style={styles.timeTagTxt}>{estimate.duration_min - 2} min</Text></View>
+                          </View>
+                          <Text style={styles.verticalServiceDesc}>¡Casco obligatorio limpio incluido!</Text>
+                          <Text style={styles.savingTag}>Ahorras ${getTierOriginalPrice("moto") - getTierPrice("moto") > 0 ? (getTierOriginalPrice("moto") - getTierPrice("moto")).toFixed(2) : "0.15"}</Text>
+                        </View>
                       </View>
-                    </View>
-                    <View style={styles.verticalServiceRight}>
-                      <Text style={styles.verticalServicePrice}>${getTierPrice("moto").toFixed(2)}</Text>
-                      <Text style={styles.verticalServicePriceBs}>Bs. {(getTierPrice("moto") * USD_BS_RATE).toFixed(0)}</Text>
-                    </View>
-                  </TouchableOpacity>
+                      <View style={styles.verticalServiceRight}>
+                        <Text style={styles.verticalServicePrice}>${getTierPrice("moto").toFixed(2)}</Text>
+                        <Text style={styles.verticalServiceOriginalPrice}>${getTierOriginalPrice("moto").toFixed(2)}</Text>
+                        <Text style={styles.verticalServicePriceBs}>Bs. {(getTierPrice("moto") * USD_BS_RATE).toFixed(0)}</Text>
+                      </View>
+                    </TouchableOpacity>
 
-                  {/* Tier 2: Económico */}
-                  <TouchableOpacity 
-                    style={[styles.verticalServiceItem, selectedService === "economico" && styles.verticalServiceItemActive]}
-                    onPress={() => setSelectedService("economico")}
-                    testID="service-economico-btn"
-                  >
-                    <View style={styles.verticalServiceLeft}>
-                      <View style={[styles.verticalServiceIconBox, selectedService === "economico" && { backgroundColor: "#FEE2E2" }]}>
-                        <Car size={24} color={selectedService === "economico" ? colors.primary : colors.textSecondary} />
-                      </View>
-                      <View style={{ gap: 2 }}>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                          <Text style={styles.verticalServiceName}>Económico</Text>
-                          <View style={styles.timeTag}><Text style={styles.timeTagTxt}>{estimate.duration_min} min</Text></View>
+                    {/* Tier 2: Económico */}
+                    <TouchableOpacity 
+                      style={[styles.verticalServiceItem, selectedService === "economico" && styles.verticalServiceItemActive]}
+                      onPress={() => setSelectedService("economico")}
+                      testID="service-economico-btn"
+                    >
+                      <View style={styles.verticalServiceLeft}>
+                        <View style={[styles.verticalServiceIconBox, selectedService === "economico" && { backgroundColor: "#FEE2E2" }]}>
+                          <Car size={24} color={selectedService === "economico" ? colors.primary : colors.textSecondary} />
                         </View>
-                        <Text style={styles.verticalServiceDesc}>Autos limpios y económicos</Text>
+                        <View style={{ gap: 2, flex: 1 }}>
+                          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                            <Text style={styles.verticalServiceName}>Económico</Text>
+                            <View style={styles.timeTag}><Text style={styles.timeTagTxt}>{estimate.duration_min} min</Text></View>
+                          </View>
+                          <Text style={styles.verticalServiceDesc}>Autos limpios y económicos</Text>
+                          <Text style={styles.savingTag}>Ahorras ${getTierOriginalPrice("economico") - getTierPrice("economico") > 0 ? (getTierOriginalPrice("economico") - getTierPrice("economico")).toFixed(2) : "0.15"}</Text>
+                        </View>
                       </View>
-                    </View>
-                    <View style={styles.verticalServiceRight}>
-                      <Text style={styles.verticalServicePrice}>${getTierPrice("economico").toFixed(2)}</Text>
-                      <Text style={styles.verticalServicePriceBs}>Bs. {(getTierPrice("economico") * USD_BS_RATE).toFixed(0)}</Text>
-                    </View>
-                  </TouchableOpacity>
+                      <View style={styles.verticalServiceRight}>
+                        <Text style={styles.verticalServicePrice}>${getTierPrice("economico").toFixed(2)}</Text>
+                        <Text style={styles.verticalServiceOriginalPrice}>${getTierOriginalPrice("economico").toFixed(2)}</Text>
+                        <Text style={styles.verticalServicePriceBs}>Bs. {(getTierPrice("economico") * USD_BS_RATE).toFixed(0)}</Text>
+                      </View>
+                    </TouchableOpacity>
 
-                  {/* Tier 3: Confort VIP */}
-                  <TouchableOpacity 
-                    style={[styles.verticalServiceItem, selectedService === "confort" && styles.verticalServiceItemActive]}
-                    onPress={() => setSelectedService("confort")}
-                    testID="service-confort-btn"
-                  >
-                    <View style={styles.verticalServiceLeft}>
-                      <View style={[styles.verticalServiceIconBox, selectedService === "confort" && { backgroundColor: "#FEE2E2" }]}>
-                        <Car size={24} color={selectedService === "confort" ? colors.primary : colors.textSecondary} />
-                      </View>
-                      <View style={{ gap: 2 }}>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                          <Text style={styles.verticalServiceName}>Confort VIP</Text>
-                          <View style={styles.timeTag}><Text style={styles.timeTagTxt}>{estimate.duration_min + 1} min</Text></View>
+                    {/* Tier 3: Confort VIP */}
+                    <TouchableOpacity 
+                      style={[styles.verticalServiceItem, selectedService === "confort" && styles.verticalServiceItemActive]}
+                      onPress={() => setSelectedService("confort")}
+                      testID="service-confort-btn"
+                    >
+                      <View style={styles.verticalServiceLeft}>
+                        <View style={[styles.verticalServiceIconBox, selectedService === "confort" && { backgroundColor: "#FEE2E2" }]}>
+                          <Car size={24} color={selectedService === "confort" ? colors.primary : colors.textSecondary} />
                         </View>
-                        <Text style={styles.verticalServiceDesc}>Clase ejecutiva con aire acondicionado</Text>
+                        <View style={{ gap: 2, flex: 1 }}>
+                          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                            <Text style={styles.verticalServiceName}>Confort VIP</Text>
+                            <View style={styles.timeTag}><Text style={styles.timeTagTxt}>{estimate.duration_min + 1} min</Text></View>
+                          </View>
+                          <Text style={styles.verticalServiceDesc}>Clase ejecutiva con aire acondicionado</Text>
+                          <Text style={styles.savingTag}>Ahorras ${getTierOriginalPrice("confort") - getTierPrice("confort") > 0 ? (getTierOriginalPrice("confort") - getTierPrice("confort")).toFixed(2) : "0.15"}</Text>
+                        </View>
                       </View>
-                    </View>
-                    <View style={styles.verticalServiceRight}>
-                      <Text style={styles.verticalServicePrice}>${getTierPrice("confort").toFixed(2)}</Text>
-                      <Text style={styles.verticalServicePriceBs}>Bs. {(getTierPrice("confort") * USD_BS_RATE).toFixed(0)}</Text>
-                    </View>
-                  </TouchableOpacity>
-                </View>
+                      <View style={styles.verticalServiceRight}>
+                        <Text style={styles.verticalServicePrice}>${getTierPrice("confort").toFixed(2)}</Text>
+                        <Text style={styles.verticalServiceOriginalPrice}>${getTierOriginalPrice("confort").toFixed(2)}</Text>
+                        <Text style={styles.verticalServicePriceBs}>Bs. {(getTierPrice("confort") * USD_BS_RATE).toFixed(0)}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  /* Delivery Package Option (Yango Style) */
+                  <View style={styles.servicesVerticalList}>
+                    <TouchableOpacity 
+                      style={[styles.verticalServiceItem, selectedService === "delivery" && styles.verticalServiceItemActive]}
+                      onPress={() => setSelectedService("delivery")}
+                      testID="service-delivery-btn"
+                    >
+                      <View style={styles.verticalServiceLeft}>
+                        <View style={[styles.verticalServiceIconBox, selectedService === "delivery" && { backgroundColor: "#FEE2E2" }]}>
+                          <Bike size={24} color={selectedService === "delivery" ? colors.primary : colors.textSecondary} />
+                        </View>
+                        <View style={{ gap: 2, flex: 1 }}>
+                          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                            <Text style={styles.verticalServiceName}>Envío Express (Delivery)</Text>
+                            <View style={styles.timeTag}><Text style={styles.timeTagTxt}>{estimate.duration_min} min</Text></View>
+                          </View>
+                          <Text style={styles.verticalServiceDesc}>Envía tus paquetes de forma rápida y segura</Text>
+                          <Text style={styles.savingTag}>Ahorras ${getTierOriginalPrice("delivery") - getTierPrice("delivery") > 0 ? (getTierOriginalPrice("delivery") - getTierPrice("delivery")).toFixed(2) : "0.30"}</Text>
+                        </View>
+                      </View>
+                      <View style={styles.verticalServiceRight}>
+                        <Text style={styles.verticalServicePrice}>${getTierPrice("delivery").toFixed(2)}</Text>
+                        <Text style={styles.verticalServiceOriginalPrice}>${getTierOriginalPrice("delivery").toFixed(2)}</Text>
+                        <Text style={styles.verticalServicePriceBs}>Bs. {(getTierPrice("delivery") * USD_BS_RATE).toFixed(0)}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                )}
 
                 {/* Optional Instructions */}
                 <View style={styles.instructionContainer}>
@@ -686,7 +783,7 @@ const styles = StyleSheet.create({
   avatar: { width: 26, height: 26, borderRadius: 999, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" },
   avatarTxt: { color: "#fff", fontFamily: fonts.bodyBold, fontSize: 12 },
   userName: { color: colors.textPrimary, fontFamily: fonts.bodyBold, fontSize: 13, flexShrink: 1 },
-  balancePill: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.primary, borderRadius: radii.full, paddingVertical: 8, paddingHorizontal: 14, borderWidth: 1, borderColor: colors.primary, ...shadows.neonPrimary },
+  balancePill: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.success, borderRadius: radii.full, paddingVertical: 8, paddingHorizontal: 14, borderWidth: 1, borderColor: colors.success, ...shadows.neonSecondary },
   balanceTxt: { color: "#fff", fontFamily: fonts.bodyBold, fontSize: 14 },
 
   bottomSheet: {
@@ -700,6 +797,21 @@ const styles = StyleSheet.create({
     gap: 12,
     ...shadows.card,
   },
+  
+  // Promo Scroll Styles
+  promoScrollContainer: { height: 60, marginTop: 4, marginBottom: 4 },
+  promoScroll: { gap: 10, paddingHorizontal: 4 },
+  promoCard: { flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderRadius: radii.md, paddingVertical: 8, paddingHorizontal: 12, height: 48, minWidth: 220, ...shadows.card },
+  promoIconContainer: { width: 28, height: 28, borderRadius: radii.full, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center", ...shadows.card },
+  promoTitleText: { fontFamily: fonts.bodyBold, fontSize: 12 },
+  promoDescText: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 10, marginTop: 1 },
+
+  // Service Type Toggle Row
+  serviceTypeToggleRow: { flexDirection: "row", gap: 10, marginVertical: 4 },
+  serviceTypeBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, height: 44, borderRadius: radii.md, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border },
+  serviceTypeBtnActive: { backgroundColor: colors.primary, borderColor: colors.primary, ...shadows.neonPrimary },
+  serviceTypeBtnTxt: { color: colors.textSecondary, fontFamily: fonts.bodyBold, fontSize: 13 },
+  serviceTypeBtnTxtActive: { color: "#FFFFFF" },
   handle: { width: 44, height: 5, borderRadius: 999, backgroundColor: colors.border, alignSelf: "center", marginBottom: 4 },
   bsTitle: { color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 18, letterSpacing: -0.3 },
   destItem: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
@@ -736,7 +848,9 @@ const styles = StyleSheet.create({
   verticalServiceDesc: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 11 },
   verticalServiceRight: { alignItems: "flex-end", gap: 2 },
   verticalServicePrice: { color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 17 },
+  verticalServiceOriginalPrice: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 12, textDecorationLine: "line-through", marginTop: 1 },
   verticalServicePriceBs: { color: colors.textSecondary, fontFamily: fonts.bodyBold, fontSize: 11 },
+  savingTag: { color: colors.success, fontFamily: fonts.bodyBold, fontSize: 11, marginTop: 1 },
   timeTag: { backgroundColor: "#F1F5F9", paddingVertical: 2, paddingHorizontal: 6, borderRadius: radii.sm },
   timeTagTxt: { color: colors.textSecondary, fontFamily: fonts.bodyBold, fontSize: 10 },
 
