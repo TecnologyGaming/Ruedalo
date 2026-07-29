@@ -72,3 +72,12 @@ export function FacebookLogo({ size = 16, color = "#1877F2" }) {
     </Svg>
   );
 }
+
+export function BriefcaseIcon({ size = 20, color = "#475569" }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5">
+      <Path d="M3 7h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}

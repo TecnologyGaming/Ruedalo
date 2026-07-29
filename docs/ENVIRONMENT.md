@@ -10,7 +10,7 @@ Crea un archivo `.env` en la carpeta `frontend/` con las siguientes propiedades:
 
 | Nombre Variable | Descripción | ¿Es Obligatoria? | Valor de Ejemplo |
 | :--- | :--- | :--- | :--- |
-| `EXPO_PUBLIC_BACKEND_URL` | URL del servidor local de desarrollo o del VPS de producción. | Sí | `https://ruedalo.preview.emergentagent.com` |
+| `EXPO_PUBLIC_BACKEND_URL` | URL del servidor local de desarrollo o del VPS de producción. | Sí | `https://ride-hail-firebase.preview.emergentagent.com` |
 | `EXPO_PUBLIC_FIREBASE_API_KEY` | Clave API de la consola de Firebase. | Sí | `AIzaSyBzsybeLDdXmxiF4...` |
 | `EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN` | Dominio de autenticación de tu proyecto de Firebase. | Sí | `ruedaloapp-8db21.firebaseapp.com` |
 | `EXPO_PUBLIC_FIREBASE_PROJECT_ID` | ID único del proyecto de Firebase. | Sí | `ruedaloapp-8db21` |

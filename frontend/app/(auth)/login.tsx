@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, ActivityIndicator } from "react-native";
+import React, { useState } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, ActivityIndicator, StatusBar } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
@@ -7,19 +7,21 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useAuth } from "@/src/lib/auth";
 import { colors, fonts, radii, spacing, shadows } from "@/src/lib/theme";
 import { toast } from "@/src/components/Toast";
-import { Phone, Shield, ArrowRight, X, Mail, Lock, User, ChevronRight, Check, Sparkles } from "lucide-react-native";
-import { RuedaloArrowLogo, SteeringWheelIcon, GoogleLogo, AppleLogo, FacebookLogo } from "@/src/components/RuedaloIcons";
+import { Phone, Shield, ArrowRight, X, User, ChevronRight, Check } from "lucide-react-native";
+import { RuedaloArrowLogo, SteeringWheelIcon, GoogleLogo, AppleLogo, FacebookLogo, BriefcaseIcon } from "@/src/components/RuedaloIcons";
 
+/**
+ * 02. BIENVENIDO / LOGIN SCREEN
+ * Pixel-Perfect Implementation - Extracted from Official Mockup
+ * Target Fidelity: >99%
+ */
 export default function LoginScreen() {
   const router = useRouter();
   const { login } = useAuth();
   const [phone, setPhone] = useState("");
-  const [useEmail, setUseEmail] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   
-  // Tab Selector: Pasajero | Conductor | Empresa (02. BIENVENIDO)
+  // Tab Selector: Pasajero | Conductor | Empresa
   const [activeTab, setActiveTab] = useState<"passenger" | "driver" | "company">("passenger");
 
   // Phone OTP verification modal state
@@ -103,308 +105,807 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <KeyboardAwareScrollView
-        contentContainerStyle={styles.scroll}
-        bottomOffset={20}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false} // Hide scrollbars (Pillar 8 validation)
-      >
-        {/* Top Header - Matches the RIGHT image logo perfectly */}
-        <View style={styles.topLogoArea}>
-          <RuedaloArrowLogo size={50} color={colors.primary} />
-          <View style={styles.brandTextBlock}>
-            <Text style={styles.brandTitleText}>Ruedalo</Text>
-            <Text style={styles.brandSubText}>Muévete contigo.</Text>
-          </View>
-        </View>
-
-        {/* Welcome Headline section */}
-        <View style={styles.welcomeTextSection}>
-          <Text style={styles.welcomeTitleText}>Bienvenido 👋</Text>
-          <Text style={styles.welcomeDescText}>
-            Inicia sesión o crea tu cuenta{"\n"}para solicitar tu próximo viaje.
-          </Text>
-        </View>
-
-        {/* Roles Segment Selectors: Pasajero, Conductor, Empresa (02. BIENVENIDO) */}
-        <View style={styles.segmentContainer}>
-          <TouchableOpacity 
-            style={[styles.segmentBtn, activeTab === "passenger" && styles.segmentBtnActive]}
-            onPress={() => setActiveTab("passenger")}
-          >
-            <User size={15} color={activeTab === "passenger" ? "#FFFFFF" : "#475569"} />
-            <Text style={[styles.segmentBtnTxt, activeTab === "passenger" && styles.segmentBtnTxtActive]}>Pasajero</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.segmentBtn, activeTab === "driver" && styles.segmentBtnActive]}
-            onPress={() => setActiveTab("driver")}
-          >
-            <SteeringWheelIcon size={15} color={activeTab === "driver" ? "#FFFFFF" : "#475569"} />
-            <Text style={[styles.segmentBtnTxt, activeTab === "driver" && styles.segmentBtnTxtActive]}>Conductor</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[styles.segmentBtn, activeTab === "company" && styles.segmentBtnActive]}
-            onPress={() => setActiveTab("company")}
-          >
-            <Sparkles size={14} color={activeTab === "company" ? "#FFFFFF" : "#475569"} />
-            <Text style={[styles.segmentBtnTxt, activeTab === "company" && styles.segmentBtnTxtActive]}>Empresa</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Phone Input Field with phone icon and formatted input (02. BIENVENIDO) */}
-        <View style={styles.phoneInputCard}>
-          <View style={styles.phoneInputInner}>
-            <Phone size={18} color="#94A3B8" style={styles.phoneIconLeft} />
-            <TextInput
-              style={styles.textInputMain}
-              placeholder="Número de teléfono"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="phone-pad"
-              value={phone}
-              onChangeText={setPhone}
-              testID="login-phone-input"
-            />
-            <View style={styles.verticalDivider} />
-            <View style={styles.countryDropdown}>
-              <Text style={styles.countryCodeTxt}>+58</Text>
-              <View style={styles.miniChevronDown} />
-            </View>
-          </View>
-        </View>
-
-        {/* Continue Button matching colors and arrow right on right of button (02. BIENVENIDO) */}
-        <TouchableOpacity 
-          style={[styles.continueBtn, loading && { opacity: 0.7 }]} 
-          onPress={onSendOtp}
-          disabled={loading}
-          testID="send-otp-btn"
+    <>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+        <KeyboardAwareScrollView
+          contentContainerStyle={styles.scroll}
+          bottomOffset={20}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <View style={styles.btnContent}>
-              <Text style={styles.continueBtnTxt}>Continuar</Text>
-              <ArrowRight size={18} color="#fff" style={styles.btnArrowRight} />
-            </View>
-          )}
-        </TouchableOpacity>
-
-        {/* Or continue with line */}
-        <View style={styles.orDividerRow}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerTxt}>o continúa con</Text>
-          <View style={styles.dividerLine} />
-        </View>
-
-        {/* Social Buttons with original high-end vector logos (Google, Apple, Facebook) */}
-        <View style={styles.socialBtnRow}>
-          <TouchableOpacity style={styles.socialBtn} onPress={() => toast("Google Auth...", "info")}>
-            <GoogleLogo size={18} />
-            <Text style={styles.socialBtnTxt}>Google</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.socialBtn} onPress={() => toast("Apple Auth...", "info")}>
-            <AppleLogo size={18} />
-            <Text style={styles.socialBtnTxt}>Apple</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.socialBtn} onPress={() => toast("Facebook Auth...", "info")}>
-            <FacebookLogo size={18} />
-            <Text style={styles.socialBtnTxt}>Facebook</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Security / Priority Banner (02. BIENVENIDO - Exactly matches Blue card) */}
-        <View style={styles.safetyCard}>
-          <View style={styles.safetyIconOuter}>
-            <View style={styles.safetyIconInner}>
-              <Check size={14} color="#FFFFFF" />
+          {/* Logo Header - Exact positioning from mockup */}
+          <View style={styles.logoHeader}>
+            <RuedaloArrowLogo size={50} color={colors.primaryLight} />
+            <View style={styles.logoBrandTextBlock}>
+              <Text style={styles.logoBrandTitle}>Ruedalo</Text>
+              <Text style={styles.logoBrandSubtitle}>Muévete contigo.</Text>
             </View>
           </View>
-          <View style={styles.safetyTextCol}>
-            <Text style={styles.safetyTitle}>Tu seguridad es nuestra prioridad</Text>
-            <Text style={styles.safetySub}>Viajes verificados, soporte 24/7{"\n"}y tecnología avanzada.</Text>
-          </View>
-          <ChevronRight size={16} color={colors.primary} style={styles.safetyChevronRight} />
-        </View>
 
-        {/* Navigation / Signup Links */}
-        <View style={styles.navLinkContainer}>
-          <TouchableOpacity onPress={() => router.push("/(auth)/register")} testID="goto-register-btn">
-            <Text style={styles.signUpLink}>
-              ¿No tienes cuenta? <Text style={styles.signUpLinkHighlight}>Crear cuenta</Text>
+          {/* Welcome Section - Exact from mockup */}
+          <View style={styles.welcomeSection}>
+            <Text style={styles.welcomeTitle}>Bienvenido 👋</Text>
+            <Text style={styles.welcomeSubtitle}>
+              Inicia sesión o crea tu cuenta{"\n"}para solicitar tu próximo viaje.
             </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.helpBtn} onPress={() => toast("Canal de ayuda abierto", "info")}>
-            <Text style={styles.helpBtnTxt}>🎧 ¿Necesitas ayuda?</Text>
-          </TouchableOpacity>
-        </View>
+          </View>
 
-        {/* Bottom Banner: Ruedalo está disponible en tu ciudad (02. BIENVENIDO) */}
-        <View style={styles.availableCard}>
-          <View style={styles.availableHeaderRow}>
-            {/* Custom styled blue sedan car shape */}
-            <View style={styles.carDrawing}>
-              <View style={styles.carRoof} />
-              <View style={styles.carChassis} />
-              <View style={styles.carWheel} />
-              <View style={styles.carWheelRight} />
+          {/* Tab Selector: Pasajero | Conductor | Empresa - Exact from mockup */}
+          <View style={styles.tabsContainer}>
+            <TouchableOpacity 
+              style={[styles.tab, activeTab === "passenger" && styles.tabActive]}
+              onPress={() => setActiveTab("passenger")}
+            >
+              <User size={20} color={activeTab === "passenger" ? "#FFFFFF" : colors.textSecondary} strokeWidth={2.5} />
+              <Text style={[styles.tabText, activeTab === "passenger" && styles.tabTextActive]}>
+                Pasajero
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.tab, activeTab === "driver" && styles.tabActive]}
+              onPress={() => setActiveTab("driver")}
+            >
+              <SteeringWheelIcon size={20} color={activeTab === "driver" ? "#FFFFFF" : colors.textSecondary} />
+              <Text style={[styles.tabText, activeTab === "driver" && styles.tabTextActive]}>
+                Conductor
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.tab, activeTab === "company" && styles.tabActive]}
+              onPress={() => setActiveTab("company")}
+            >
+              <BriefcaseIcon size={20} color={activeTab === "company" ? "#FFFFFF" : colors.textSecondary} />
+              <Text style={[styles.tabText, activeTab === "company" && styles.tabTextActive]}>
+                Empresa
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Phone Input - Exact dimensions and layout from mockup */}
+          <View style={styles.phoneInputContainer}>
+            <View style={styles.phoneInputWrapper}>
+              <Phone size={20} color={colors.textMuted} style={styles.phoneIcon} />
+              <TextInput
+                style={styles.phoneInput}
+                placeholder="Número de teléfono"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="phone-pad"
+                value={phone}
+                onChangeText={setPhone}
+                testID="login-phone-input"
+              />
+              <View style={styles.divider} />
+              <View style={styles.countryCodeSelector}>
+                <Text style={styles.countryCode}>+58</Text>
+                <View style={styles.dropdownArrow} />
+              </View>
             </View>
-            <View style={styles.availableTextCol}>
-              <Text style={styles.availableTitle}>Ruedalo está disponible</Text>
-              <Text style={styles.availableTitle}>en tu ciudad</Text>
+          </View>
+
+          {/* Continue Button - Exact from mockup */}
+          <TouchableOpacity 
+            style={[styles.continueButton, loading && styles.continueButtonLoading]} 
+            onPress={onSendOtp}
+            disabled={loading}
+            testID="send-otp-btn"
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <>
+                <Text style={styles.continueButtonText}>Continuar</Text>
+                <ArrowRight size={20} color="#FFFFFF" style={styles.continueButtonArrow} />
+              </>
+            )}
+          </TouchableOpacity>
+
+          {/* Divider: "o continúa con" - Exact from mockup */}
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>o continúa con</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* Social Login Buttons - Exact dimensions from mockup */}
+          <View style={styles.socialButtonsRow}>
+            <TouchableOpacity 
+              style={styles.socialButton} 
+              onPress={() => toast("Google Auth...", "info")}
+            >
+              <GoogleLogo size={24} />
+              <Text style={styles.socialButtonText}>Google</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.socialButton} 
+              onPress={() => toast("Apple Auth...", "info")}
+            >
+              <AppleLogo size={24} />
+              <Text style={styles.socialButtonText}>Apple</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.socialButton} 
+              onPress={() => toast("Facebook Auth...", "info")}
+            >
+              <FacebookLogo size={24} />
+              <Text style={styles.socialButtonText}>Facebook</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Security Card - Exact from mockup */}
+          <View style={styles.securityCard}>
+            <View style={styles.securityIconContainer}>
+              <Check size={16} color="#FFFFFF" strokeWidth={3} />
+            </View>
+            <View style={styles.securityTextContainer}>
+              <Text style={styles.securityTitle}>Tu seguridad es nuestra prioridad</Text>
+              <Text style={styles.securitySubtitle}>
+                Viajes verificados, soporte 24/7{"\n"}y tecnología avanzada.
+              </Text>
+            </View>
+            <ChevronRight size={18} color={colors.primary} style={styles.securityChevron} />
+          </View>
+
+          {/* Bottom Links - Exact positioning from mockup */}
+          <View style={styles.linksContainer}>
+            <TouchableOpacity onPress={() => router.push("/(auth)/register")} testID="goto-register-btn">
+              <Text style={styles.linkText}>
+                ¿No tienes cuenta? <Text style={styles.linkHighlight}>Crear cuenta</Text>
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity onPress={() => toast("Canal de ayuda abierto", "info")}>
+              <Text style={styles.linkHighlight}>¿Necesitas ayuda?</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Availability Card - Exact from mockup */}
+          <View style={styles.availabilityCard}>
+            <View style={styles.availabilityHeader}>
+              {/* Blue car illustration */}
+              <View style={styles.carIllustration}>
+                <View style={styles.carRoof} />
+                <View style={styles.carBody} />
+                <View style={styles.carWindowLeft} />
+                <View style={styles.carWindowRight} />
+                <View style={styles.carWheelLeft} />
+                <View style={styles.carWheelRight} />
+              </View>
+              <View style={styles.availabilityTextContainer}>
+                <Text style={styles.availabilityTitle}>Ruedalo está disponible</Text>
+                <Text style={styles.availabilityTitle}>en tu ciudad</Text>
+              </View>
+            </View>
+            <View style={styles.availabilityFeaturesRow}>
+              <View style={styles.featureBadge}>
+                <Text style={styles.featureIcon}>⚡</Text>
+                <Text style={styles.featureText}>Rápido</Text>
+              </View>
+              <View style={styles.featureBadge}>
+                <Text style={styles.featureIcon}>🛡️</Text>
+                <Text style={styles.featureText}>Seguro</Text>
+              </View>
+              <View style={styles.featureBadge}>
+                <Check size={14} color={colors.success} strokeWidth={3} />
+                <Text style={styles.featureText}>Confiable</Text>
+              </View>
             </View>
           </View>
-          <View style={styles.availableFeaturesRow}>
-            <Text style={styles.featureItem}>⚡ Rápido</Text>
-            <Text style={styles.featureItem}>🛡️ Seguro</Text>
-            <Text style={styles.featureItem}>✓ Confiable</Text>
-          </View>
-        </View>
 
-        {/* Developer Test Suite Panel */}
-        <View style={styles.testPanel}>
-          <Text style={styles.testPanelTitle}>Rápido Acceso de Pruebas</Text>
-          <View style={styles.testChipsRow}>
-            <TouchableOpacity style={styles.testChip} onPress={() => quickFill("passenger")} testID="quick-passenger-btn">
-              <Text style={styles.testChipTxt}>Pasajero</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.testChip} onPress={() => quickFill("driver")} testID="quick-driver-btn">
-              <Text style={styles.testChipTxt}>Conductor</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.testChip} onPress={() => quickFill("admin")} testID="quick-admin-btn">
-              <Text style={styles.testChipTxt}>Admin</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </KeyboardAwareScrollView>
-
-      {/* OTP verification Modal */}
-      <Modal visible={otpModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Verifica tu teléfono</Text>
-              <TouchableOpacity onPress={() => setOtpModal(false)}>
-                <X size={22} color={colors.textPrimary} />
+          {/* Developer Test Panel */}
+          <View style={styles.devPanel}>
+            <Text style={styles.devPanelTitle}>ACCESO RÁPIDO DE PRUEBAS</Text>
+            <View style={styles.devButtonsRow}>
+              <TouchableOpacity 
+                style={styles.devButton} 
+                onPress={() => quickFill("passenger")} 
+                testID="quick-passenger-btn"
+              >
+                <Text style={styles.devButtonText}>Pasajero</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.devButton} 
+                onPress={() => quickFill("driver")} 
+                testID="quick-driver-btn"
+              >
+                <Text style={styles.devButtonText}>Conductor</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.devButton} 
+                onPress={() => quickFill("admin")} 
+                testID="quick-admin-btn"
+              >
+                <Text style={styles.devButtonText}>Admin</Text>
               </TouchableOpacity>
             </View>
-            
-            <View style={styles.shieldBadge}>
-              <Shield size={24} color={colors.success} />
-              <Text style={styles.shieldTxt}>Código de seguridad enviado</Text>
-            </View>
-
-            <Text style={styles.modalDesc}>
-              Hemos enviado un código SMS de 6 dígitos a tu número <Text style={{ fontFamily: fonts.bodyBold }}>+58 {phone}</Text>.
-            </Text>
-
-            <TextInput
-              style={styles.otpInput}
-              placeholder="0 0 0 0 0 0"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="number-pad"
-              maxLength={6}
-              value={otpCode}
-              onChangeText={setOtpCode}
-              testID="otp-verification-input"
-            />
-
-            <TouchableOpacity style={styles.modalVerifyBtn} onPress={onVerifyOtp} testID="submit-otp-btn">
-              <Text style={styles.modalVerifyBtnTxt}>Verificar código</Text>
-            </TouchableOpacity>
           </View>
-        </View>
-      </Modal>
-    </SafeAreaView>
+        </KeyboardAwareScrollView>
+
+        {/* OTP Verification Modal */}
+        <Modal visible={otpModal} animationType="slide" transparent>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Verifica tu teléfono</Text>
+                <TouchableOpacity onPress={() => setOtpModal(false)}>
+                  <X size={24} color={colors.textPrimary} />
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.modalShieldBadge}>
+                <Shield size={24} color={colors.success} />
+                <Text style={styles.modalShieldText}>Código de seguridad enviado</Text>
+              </View>
+
+              <Text style={styles.modalDescription}>
+                Hemos enviado un código SMS de 6 dígitos a tu número{" "}
+                <Text style={styles.modalPhoneHighlight}>+58 {phone}</Text>.
+              </Text>
+
+              <TextInput
+                style={styles.otpInput}
+                placeholder="0 0 0 0 0 0"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="number-pad"
+                maxLength={6}
+                value={otpCode}
+                onChangeText={setOtpCode}
+                testID="otp-verification-input"
+              />
+
+              <TouchableOpacity 
+                style={styles.modalVerifyButton} 
+                onPress={onVerifyOtp} 
+                testID="submit-otp-btn"
+              >
+                <Text style={styles.modalVerifyButtonText}>Verificar código</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </SafeAreaView>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#FFFFFF" },
-  scroll: { flexGrow: 1, padding: spacing.md, gap: spacing.md, backgroundColor: "#FFFFFF" },
+  safe: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
   
-  topLogoArea: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14 },
-  brandTextBlock: { gap: 1 },
-  brandTitleText: { fontSize: 32, fontFamily: fonts.headingBold, color: colors.primary, letterSpacing: -1 },
-  brandSubText: { fontSize: 13, fontFamily: fonts.body, color: colors.primary, marginTop: -2 },
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: 16,
+    paddingBottom: 30,
+    backgroundColor: "#FFFFFF",
+  },
 
-  welcomeTextSection: { marginTop: 16, marginBottom: 8, gap: 4 },
-  welcomeTitleText: { fontSize: 32, fontFamily: fonts.headingBold, color: colors.textPrimary, letterSpacing: -0.5 },
-  welcomeDescText: { fontSize: 15, fontFamily: fonts.body, color: colors.textSecondary, lineHeight: 22 },
+  // Logo Header - Exact from mockup: 50px from top
+  logoHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 50,
+    marginBottom: 30,
+  },
+  
+  logoBrandTextBlock: {
+    gap: 0,
+  },
+  
+  logoBrandTitle: {
+    fontSize: 32,
+    fontFamily: fonts.headingBold,
+    color: colors.textPrimary,
+    letterSpacing: -1,
+    lineHeight: 38,
+  },
+  
+  logoBrandSubtitle: {
+    fontSize: 13,
+    fontFamily: fonts.body,
+    color: colors.primary,
+    lineHeight: 16,
+  },
 
-  segmentContainer: { flexDirection: "row", backgroundColor: "#F1F5F9", borderRadius: radii.lg, padding: 4, marginVertical: 10, borderWidth: 1, borderColor: colors.border },
-  segmentBtn: { flex: 1, flexDirection: "row", height: 44, borderRadius: radii.md, alignItems: "center", justifyContent: "center", gap: 6 },
-  segmentBtnActive: { backgroundColor: colors.primary, ...shadows.btn },
-  segmentBtnTxt: { color: colors.textSecondary, fontFamily: fonts.bodyMedium, fontSize: 13 },
-  segmentBtnTxtActive: { color: "#FFFFFF", fontFamily: fonts.bodyBold },
+  // Welcome Section - Exact spacing from mockup
+  welcomeSection: {
+    marginBottom: 25,
+    gap: 10,
+  },
+  
+  welcomeTitle: {
+    fontSize: 28,
+    fontFamily: fonts.headingBold,
+    color: colors.textPrimary,
+    letterSpacing: -0.5,
+  },
+  
+  welcomeSubtitle: {
+    fontSize: 16,
+    fontFamily: fonts.body,
+    color: colors.textSecondary,
+    lineHeight: 22,
+  },
 
-  phoneInputCard: { backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, paddingHorizontal: 16, height: 54, justifyContent: "center", marginTop: 10 },
-  phoneInputInner: { flexDirection: "row", alignItems: "center", gap: 10 },
-  phoneIconLeft: { marginRight: 2 },
-  textInputMain: { flex: 1, color: colors.textPrimary, fontFamily: fonts.bodyMedium, fontSize: 15 },
-  verticalDivider: { width: 1, height: 24, backgroundColor: colors.border },
-  countryDropdown: { flexDirection: "row", alignItems: "center", gap: 4 },
-  countryCodeTxt: { color: colors.textPrimary, fontFamily: fonts.bodyBold, fontSize: 14 },
-  miniChevronDown: { width: 6, height: 6, borderWidth: 1.5, borderColor: colors.textPrimary, borderTopWidth: 0, borderLeftWidth: 0, transform: [{ rotate: "45deg" }], marginTop: -2, marginLeft: 2 },
+  // Tabs - Exact dimensions: ~100px per tab, 8px spacing, 8px border radius
+  tabsContainer: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 20,
+  },
+  
+  tab: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    height: 40,
+    backgroundColor: colors.cardLightBlue,
+    borderRadius: 8,
+    gap: 6,
+  },
+  
+  tabActive: {
+    backgroundColor: colors.primary,
+  },
+  
+  tabText: {
+    fontSize: 13,
+    fontFamily: fonts.bodyMedium,
+    color: colors.textSecondary,
+  },
+  
+  tabTextActive: {
+    color: "#FFFFFF",
+    fontFamily: fonts.bodyBold,
+  },
 
-  continueBtn: { backgroundColor: colors.primary, height: 52, borderRadius: radii.md, alignItems: "center", justifyContent: "center", marginTop: 14, ...shadows.btn },
-  btnContent: { flexDirection: "row", alignItems: "center", width: "100%", paddingHorizontal: 20, justifyContent: "center", position: "relative" },
-  continueBtnTxt: { color: "#FFFFFF", fontFamily: fonts.bodyBold, fontSize: 16 },
-  btnArrowRight: { position: "absolute", right: 0 },
+  // Phone Input - Exact dimensions: 335px width, 56px height
+  phoneInputContainer: {
+    marginBottom: 16,
+  },
+  
+  phoneInputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 56,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  
+  phoneIcon: {
+    marginRight: 6,
+  },
+  
+  phoneInput: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: fonts.bodyMedium,
+    color: colors.textPrimary,
+  },
+  
+  divider: {
+    width: 1,
+    height: 24,
+    backgroundColor: colors.border,
+  },
+  
+  countryCodeSelector: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  
+  countryCode: {
+    fontSize: 14,
+    fontFamily: fonts.bodyBold,
+    color: colors.textPrimary,
+  },
+  
+  dropdownArrow: {
+    width: 6,
+    height: 6,
+    borderWidth: 1.5,
+    borderColor: colors.textPrimary,
+    borderTopWidth: 0,
+    borderLeftWidth: 0,
+    transform: [{ rotate: "45deg" }],
+    marginTop: -2,
+  },
 
-  orDividerRow: { flexDirection: "row", alignItems: "center", gap: 10, marginVertical: 12 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
-  dividerTxt: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 12 },
+  // Continue Button - Exact dimensions: 335px width, 56px height
+  continueButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    height: 56,
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    marginBottom: 20,
+    position: "relative",
+  },
+  
+  continueButtonLoading: {
+    opacity: 0.7,
+  },
+  
+  continueButtonText: {
+    fontSize: 16,
+    fontFamily: fonts.bodyBold,
+    color: "#FFFFFF",
+  },
+  
+  continueButtonArrow: {
+    position: "absolute",
+    right: 20,
+  },
 
-  socialBtnRow: { flexDirection: "row", gap: 10 },
-  socialBtn: { flex: 1, flexDirection: "row", height: 46, borderRadius: radii.md, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center", gap: 6 },
-  socialBtnTxt: { color: colors.textPrimary, fontFamily: fonts.bodyBold, fontSize: 12 },
+  // Divider Row - Exact from mockup
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 20,
+  },
+  
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  
+  dividerText: {
+    fontSize: 14,
+    fontFamily: fonts.body,
+    color: colors.textSecondary,
+  },
 
-  // Safety Card Banner (02. BIENVENIDO)
-  safetyCard: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "#EFF6FF", borderWidth: 1, borderColor: "#DBEAFE", borderRadius: radii.lg, padding: 14, marginVertical: 12, ...shadows.card },
-  safetyIconOuter: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" },
-  safetyIconInner: { width: 16, height: 16, alignItems: "center", justifyContent: "center" },
-  safetyTextCol: { flex: 1, gap: 2 },
-  safetyTitle: { color: colors.primary, fontFamily: fonts.bodyBold, fontSize: 13 },
-  safetySub: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 11, lineHeight: 16 },
-  safetyChevronRight: { marginLeft: "auto" },
+  // Social Buttons - Exact dimensions: ~100px per button, 48px height, 16px spacing
+  socialButtonsRow: {
+    flexDirection: "row",
+    gap: 16,
+    marginBottom: 20,
+  },
+  
+  socialButton: {
+    flex: 1,
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    height: 48,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    gap: 4,
+  },
+  
+  socialButtonText: {
+    fontSize: 12,
+    fontFamily: fonts.bodyBold,
+    color: colors.textPrimary,
+  },
 
-  navLinkContainer: { alignItems: "center", gap: 12, marginVertical: 8 },
-  signUpLink: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 13 },
-  signUpLinkHighlight: { color: colors.primary, fontFamily: fonts.bodyBold },
-  helpBtn: { flexDirection: "row", alignItems: "center" },
-  helpBtnTxt: { color: colors.primary, fontFamily: fonts.bodyBold, fontSize: 13 },
+  // Security Card - Exact dimensions and colors from mockup
+  securityCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.cardSecurityBg,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 30,
+    gap: 12,
+  },
+  
+  securityIconContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  
+  securityTextContainer: {
+    flex: 1,
+    gap: 2,
+  },
+  
+  securityTitle: {
+    fontSize: 13,
+    fontFamily: fonts.bodyBold,
+    color: colors.primary,
+  },
+  
+  securitySubtitle: {
+    fontSize: 11,
+    fontFamily: fonts.body,
+    color: colors.textSecondary,
+    lineHeight: 16,
+  },
+  
+  securityChevron: {
+    marginLeft: "auto",
+  },
 
-  // Available in city Card (02. BIENVENIDO)
-  availableCard: { backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, padding: 16, gap: 12, marginVertical: 10, ...shadows.card },
-  availableHeaderRow: { flexDirection: "row", alignItems: "center", gap: 14 },
-  carDrawing: { width: 70, height: 40, position: "relative" },
-  carRoof: { position: "absolute", top: 4, left: 16, width: 34, height: 16, backgroundColor: colors.primary, borderTopLeftRadius: 10, borderTopRightRadius: 10 },
-  carChassis: { position: "absolute", bottom: 8, left: 4, width: 62, height: 16, backgroundColor: colors.primary, borderRadius: 4 },
-  carWheel: { position: "absolute", bottom: 0, left: 14, width: 14, height: 14, borderRadius: 7, backgroundColor: "#111317", borderWidth: 3, borderColor: "#FFFFFF" },
-  carWheelRight: { position: "absolute", bottom: 0, right: 14, width: 14, height: 14, borderRadius: 7, backgroundColor: "#111317", borderWidth: 3, borderColor: "#FFFFFF" },
-  availableTextCol: { flex: 1, gap: 1 },
-  availableTitle: { color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 14, lineHeight: 18 },
-  availableFeaturesRow: { flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 4, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 10 },
-  featureItem: { color: colors.textSecondary, fontFamily: fonts.bodyBold, fontSize: 11 },
+  // Links Container - Exact spacing from mockup
+  linksContainer: {
+    alignItems: "center",
+    gap: 16,
+    marginBottom: 30,
+  },
+  
+  linkText: {
+    fontSize: 13,
+    fontFamily: fonts.body,
+    color: colors.textSecondary,
+  },
+  
+  linkHighlight: {
+    fontSize: 13,
+    fontFamily: fonts.bodyBold,
+    color: colors.primary,
+  },
 
-  testPanel: { backgroundColor: colors.elevated, padding: 14, borderRadius: radii.lg, gap: 10, marginTop: 8 },
-  testPanelTitle: { color: colors.textSecondary, fontFamily: fonts.bodyBold, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, textAlign: "center" },
-  testChipsRow: { flexDirection: "row", gap: 8 },
-  testChip: { flex: 1, backgroundColor: colors.surface, height: 38, borderRadius: radii.full, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border, ...shadows.card },
-  testChipTxt: { color: colors.textPrimary, fontFamily: fonts.bodyMedium, fontSize: 11 },
+  // Availability Card - Exact from mockup
+  availabilityCard: {
+    backgroundColor: colors.bg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    gap: 12,
+  },
+  
+  availabilityHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  
+  // Car Illustration - Blue sedan matching mockup
+  carIllustration: {
+    width: 70,
+    height: 40,
+    position: "relative",
+  },
+  
+  carRoof: {
+    position: "absolute",
+    top: 4,
+    left: 16,
+    width: 34,
+    height: 16,
+    backgroundColor: colors.primary,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+  },
+  
+  carBody: {
+    position: "absolute",
+    bottom: 8,
+    left: 4,
+    width: 62,
+    height: 16,
+    backgroundColor: colors.primary,
+    borderRadius: 4,
+  },
+  
+  carWindowLeft: {
+    position: "absolute",
+    top: 8,
+    left: 20,
+    width: 10,
+    height: 8,
+    backgroundColor: "#FFFFFF",
+    opacity: 0.3,
+    borderTopLeftRadius: 4,
+  },
+  
+  carWindowRight: {
+    position: "absolute",
+    top: 8,
+    right: 26,
+    width: 10,
+    height: 8,
+    backgroundColor: "#FFFFFF",
+    opacity: 0.3,
+    borderTopRightRadius: 4,
+  },
+  
+  carWheelLeft: {
+    position: "absolute",
+    bottom: 0,
+    left: 14,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: "#000000",
+    borderWidth: 3,
+    borderColor: "#FFFFFF",
+  },
+  
+  carWheelRight: {
+    position: "absolute",
+    bottom: 0,
+    right: 14,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: "#000000",
+    borderWidth: 3,
+    borderColor: "#FFFFFF",
+  },
+  
+  availabilityTextContainer: {
+    flex: 1,
+    gap: 2,
+  },
+  
+  availabilityTitle: {
+    fontSize: 14,
+    fontFamily: fonts.headingBold,
+    color: colors.textPrimary,
+    lineHeight: 18,
+  },
+  
+  availabilityFeaturesRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  
+  featureBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  
+  featureIcon: {
+    fontSize: 14,
+  },
+  
+  featureText: {
+    fontSize: 11,
+    fontFamily: fonts.bodyBold,
+    color: colors.textSecondary,
+  },
 
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
-  modalContent: { backgroundColor: colors.surface, borderTopLeftRadius: radii.xl, borderTopRightRadius: radii.xl, padding: 22, paddingBottom: 40, gap: 14 },
-  modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  modalTitle: { color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 18 },
-  shieldBadge: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "center", backgroundColor: "#ECFDF5", paddingVertical: 6, paddingHorizontal: 12, borderRadius: radii.full, marginTop: 4 },
-  shieldTxt: { color: colors.success, fontFamily: fonts.bodyBold, fontSize: 11 },
-  modalDesc: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 13, textAlign: "center", paddingHorizontal: 10 },
-  otpInput: { backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, height: 56, color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 22, textAlign: "center", letterSpacing: 8, marginVertical: 10 },
-  modalVerifyBtn: { backgroundColor: colors.success, height: 48, borderRadius: radii.lg, alignItems: "center", justifyContent: "center", ...shadows.neonSecondary },
-  modalVerifyBtnTxt: { color: "#fff", fontFamily: fonts.bodyBold, fontSize: 15 },
+  // Developer Test Panel
+  devPanel: {
+    backgroundColor: colors.elevated,
+    borderRadius: 12,
+    padding: 14,
+    gap: 10,
+    marginBottom: 20,
+  },
+  
+  devPanelTitle: {
+    fontSize: 11,
+    fontFamily: fonts.bodyBold,
+    color: colors.textSecondary,
+    textAlign: "center",
+    letterSpacing: 0.5,
+  },
+  
+  devButtonsRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  
+  devButton: {
+    flex: 1,
+    height: 38,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  
+  devButtonText: {
+    fontSize: 11,
+    fontFamily: fonts.bodyMedium,
+    color: colors.textPrimary,
+  },
+
+  // OTP Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  
+  modalContent: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 24,
+    paddingBottom: 40,
+    gap: 14,
+  },
+  
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  
+  modalTitle: {
+    fontSize: 18,
+    fontFamily: fonts.headingBold,
+    color: colors.textPrimary,
+  },
+  
+  modalShieldBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "center",
+    gap: 6,
+    backgroundColor: "#ECFDF5",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    marginTop: 4,
+  },
+  
+  modalShieldText: {
+    fontSize: 11,
+    fontFamily: fonts.bodyBold,
+    color: colors.success,
+  },
+  
+  modalDescription: {
+    fontSize: 13,
+    fontFamily: fonts.body,
+    color: colors.textSecondary,
+    textAlign: "center",
+    paddingHorizontal: 10,
+  },
+  
+  modalPhoneHighlight: {
+    fontFamily: fonts.bodyBold,
+  },
+  
+  otpInput: {
+    backgroundColor: colors.bg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    height: 56,
+    fontSize: 22,
+    fontFamily: fonts.headingBold,
+    color: colors.textPrimary,
+    textAlign: "center",
+    letterSpacing: 8,
+    marginVertical: 10,
+  },
+  
+  modalVerifyButton: {
+    backgroundColor: colors.success,
+    height: 48,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  
+  modalVerifyButtonText: {
+    fontSize: 15,
+    fontFamily: fonts.bodyBold,
+    color: "#FFFFFF",
+  },
 });

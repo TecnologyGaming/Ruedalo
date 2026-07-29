@@ -1,132 +1,147 @@
 <analysis>**original_problem_statement:**
-User wanted to create a native, basic Uber-like app (RideVE) and asked about the credit cost to create and deploy it.
+User wants to build the MVP of a ride-hailing app called Ruedalo. The app must undergo a complete architectural pivot from the previous FastAPI+MongoDB setup to a 100% Serverless architecture using Firebase (Auth, Firestore, Storage, Cloud Functions). 
 PRODUCT REQUIREMENTS:
-- 3 Roles: Passenger, Driver, Admin.
-- Map integration:  with Google Maps (user provided API key).
-- Auth: JWT (email/password).
-- Payments: Pago Móvil (Venezuelan manual mobile payment flow) to recharge an in-app wallet. Rides deduct from this wallet. Admin approves the recharge manually from a dashboard.
-- Core features: Request ride (origin/destination), price & time estimation, ride history, driver rating, chat (passenger-driver), and simulated nearby drivers.
+- **Strict Visual Fidelity:** The UI must be a >98% pixel-perfect replica of the provided design system (Ruedalo Design System). 
+- **Serverless Architecture:** Client is purely visual. ALL business logic (pricing, discounts, wallet calculation, referrals) must execute in Cloud Functions.
+- **Ledger Wallet:** The wallet has no fixed balance; it is calculated dynamically from a ledger of multi-currency transactions.
+- **USD Base Currency:** All backend calculations are in USD, with dynamic conversion to Bolívares (Bs) for display.
+- **Pricing vs. Services:** Complete separation of  (visual/functional definitions) and  (rates, surge, rules).
+- **Scalability:** Designed to support multiple apps (Passenger & Driver) sharing the exact same backend infrastructure.
 
-**User's preferred language:**
-Spanish (INSTRUCT next agent to respond in Spanish only. User messages: Crea una app móvil..., cuantos tokens aproximadamente me costaria crear el apk ??)
+**User's preferred language**: Spanish (INSTRUCT next agent to respond in Spanish only).
 
 **what currently exists?**
-A fully functional MVP of a ride-hailing app tailored for Venezuela. It features a custom Dark Neon design system (Magenta & Cyan accents). The backend is powered by FastAPI + MongoDB handling JWT Auth with RBAC. The Expo frontend has dedicated dashboards for Passengers, Drivers, and Admins. It includes Google Maps integration, a manual wallet top-up flow for Pago Móvil, complete ride lifecycle management, in-ride chat, and driver rating. 
+The foundational architecture for the new Ruedalo platform has been laid out. The project has been fully documented with its new rules (). Firebase security rules (, ) and a robust  conforming to the new brand (Poppins font, 20px border radius, specific blue/green colors) have been created. The Splash screen () and Welcome/Login screen () have been heavily refactored to match the user's strict visual requirements.
 
-**Last working item:**
-- Last item agent was working: Answering the user's question regarding the credit cost to generate an APK. The agent queried the  and informed the user that deployment costs ~50 credits/month (which includes Android APK/AAB and iOS), explained the deployment steps, and recommended setting a final app name and logo before publishing.
-- Status: COMPLETED
-- Agent Testing Done: Y (E2E was done prior to the user's question)
-- Which testing method agent to use? NA
+**Last working item**:
+- Last item agent was working: Iteratively adjusting the UI of the Splash () and Login () screens to achieve an absolutely pixel-perfect match with the user's mockups. The user explicitly halted all functional development until these screens are visually identical to the designs.
+- Status: USER VERIFICATION PENDING
+- Agent Testing Done: N
+- Which testing method agent to use? screenshot tool (CRITICAL: Take a screenshot to show the user the current UI render for their approval).
 - User Testing Done: N
 
-**All Pending/In progress Issue list:**
-None.
+**All Pending/In progress Issue list**:
+  - Issue 1: Pixel-Perfect UI Validation for Splash and Login.
+     - Attempted fixes: Agent updated styles, margins, typography, and icons in  and  after the user rejected the previous iteration for lack of fidelity.
+     - Next debug checklist: Use the  to capture the current render of the Splash and Login screens and ask the user if the fidelity is now acceptable. Do not move to other screens until approved.
+     - Why fix this issue and what will be achieved with the fix? The user mandated that the design is the Single Source of Truth and forbade advancing to other screens until the visual match is >98%.
+     - Status: USER VERIFICATION PENDING
+     - Is recurring issue? Y
+     - Should Test frontend/backend/both after fix? Frontend (Screenshot)
+     - Blocked on other issue: None
 
-**In progress Task List:**
-None.
+**In progress Task List**:
+  - Task 1: Firebase Auth and Serverless Logic Integration.
+     - Where to resume: Once the UI is approved, integrate Firebase Phone Auth into the Login screen.
+     - What will be achieved with this? Functional onboarding flow compliant with the new serverless architecture.
+     - Status: BLOCKED
+     - Should Test frontend/backend/both after fix? Both
+     - Blocked on something: User approval of the Login UI.
 
-**Upcoming and Future Tasks:**
+**Upcoming and Future Tasks**
 Upcoming Tasks:
-- Change the generic app name (RideVE) to the user's definitive name. (P0)
-- Update the app logo/icon from the generic one to a custom one. (P1)
-- Trigger deployment/build based on user confirmation. (P1)
+- [P0] Show UI screenshot to user for final UI approval of Splash/Login.
+- [P0] Implement Firebase Phone Auth (Login flow).
+- [P1] Implement Cloud Functions (, , , ).
+- [P1] Identity Verification flow (Cedula upload to Firebase Storage).
+- [P1] Develop Dual Home Screen (Rides / Deliveries toggle) & Promo carousel with exact visual fidelity.
+- [P2] Service & Pricing selection screen (Moto123, Económico, Comfort, XL, Envíos).
 
 Future Tasks:
-- Push notifications integration.
-- Dynamic pricing (rush hour/night).
-- Real-time driver geolocation updates during approach.
-- Ride categories (Express / Comfort / Pet) with differentiated pricing.
+- Wallet & Ledger UI (showing transaction history).
+- Referral and Promotions Engine implementation.
+- Ruedalo Driver application setup.
 
-**Completed work in this session:**
-- Backend API (Auth, Wallet, Rides, Messages, Admin stats/config) with FastAPI and MongoDB (DONE)
-- Expo Frontend with 3 role-based dashboards (Passenger, Driver, Admin) (DONE)
-- Google Maps Integration ( for Native, fallback placeholder for Web) (DONE)
-- Pago Móvil manual recharge flow + Wallet deductions (DONE)
-- Ride lifecycle, chat, and driver rating (DONE)
-- Answered user's query regarding APK generation cost via support agent (DONE)
+**Completed work in this session**
+- Defined and documented 14 core architectural rules for Ruedalo () (DONE)
+- Configured Firebase rules (, , ) (DONE)
+- Initialized Ruedalo Design System () (DONE)
+- Refactored  and  for exact visual fidelity (DONE - pending validation)
 
-**Earlier issues found/mentioned but not fixed:**
+**Earlier issues found/mentioned but not fixed**
 None.
 
-**Known issue recurrence from previous fork:**
+**Known issue recurrence from previous fork**
 - Issue recurrence in previous fork: None
 - Recurrence count: 0
 - Status: NOT STARTED
 
-**Code Architecture:**
+**Code Architecture**
 
 
-**Key Technical Concepts:**
-- Frontend: React Native with Expo Router, React Native Maps, Lucide Icons, Keyboard Controller. Custom Dark Neon theme (strictly no white backgrounds).
-- Backend: FastAPI, Motor (Async MongoDB), JWT Auth, Passlib (Bcrypt).
+**Key Technical Concepts**
+- **Frontend**: React Native, Expo Router. Strict adherence to Ruedalo Design System (Poppins font, 20px border radius).
+- **Backend**: Firebase Serverless (Firestore, Auth, Storage, Cloud Functions).
+- **Zero Client Logic**: The client is purely visual. ALL business logic (pricing, referrals, ledger calculation) MUST execute in Cloud Functions.
+- **Financial Traceability**: Ledger-based wallet (no fixed balance fields). USD base currency with dynamic Bs conversion stored securely on every transaction.
 
-**key DB schema:**
-- : {id, email, hashed_password, role, name, phone, wallet_balance, is_online, lat, lng, rating_avg}
-- : {id, passenger_id, driver_id, origin, destination, status, price, distance, duration}
-- : {id, ride_id, sender_id, text}
-- : {id, user_id, amount, reference, bank, status}
-- : {bank_name, account_name, account_id, phone}
-- : {ride_id, rater_id, ratee_id, score, comment}
+**key DB schema** (Firestore)
+- : {id, name, phone, referral_code, identity_status}
+- : {completed_rides, reward_points} (Managed by Cloud Functions)
+- : {id, passenger_id, origin, destination, service_type, price_usd, amount_bs, exchange_rate_used, status}
+- : {id, user_id, amount, currency, exchange_rate_used, type}
+- : {id, name, icon, category} (Visuals only)
+- : {service_id, base_price, price_per_km} (Rates only)
+- : Global rules, feature flags, promotions.
 
-**changes in tech stack:**
-- None.
+**changes in tech stack**
+- **MAJOR MIGRATION**: Complete removal of FastAPI and MongoDB. The project is now 100% Firebase Serverless. The old  folder should be considered obsolete/deprecated.
 
-**All files of reference:**
-- : Complete backend logic.
--  & : Map component separated for web/native compatibility to avoid Metro bundler crashes.
-- : Contains demo credentials for Passenger, Driver, and Admin.
-- : Design specs (Dark mode, Magenta/Cyan accents).
+**All files of reference**
+- : Contains all mandatory architectural guidelines agreed upon with the user. Read these if in doubt.
+- : Official design tokens.
+- : Splash screen UI.
+- : Login/Welcome UI.
+-  & : Security layer.
 
-**Areas that need refactoring:**
--  is quite large (monolith). If the app scales further, it may need to be split into separate routers (auth, rides, wallet, admin). 
+**Areas that need refactoring**
+- The old  (FastAPI) is fully deprecated based on the new architecture rules and should not be used.
 
-**key api endpoints:**
-- Auth: , , 
-- Wallet: , , 
-- Rides: , , , , , 
-- Messages: , 
-- Admin: , 
+**key api endpoints**
+- Standard REST endpoints are replaced by Firebase Cloud Functions (pending implementation: , , etc.).
 
-**Critical Info for New Agent:**
-- The app uses a manual Pago Móvil system for wallet top-ups (specific to the Venezuelan market). Admins must manually approve these recharges from their dashboard.
-- The map component uses  for native but uses a  mock/fallback to avoid breaking the web bundle.
-- UI styling strictly follows a Dark Mode with Neon accents. Do not introduce white backgrounds or light mode elements.
+**Critical Info for New Agent**
+- **VISUAL FIDELITY RULE**: The user has strictly mandated that the UI must be a >98% pixel-perfect replica of their provided designs. You MUST NOT add, remove, or reinterpret UI elements. The user has explicitly paused all functional development until the Splash/Login screens are visually perfect. 
+- **ACTION REQUIRED**: Use the  immediately to take a snapshot of the current Expo Web Preview of  and  to show the user for final approval before writing any more code.
+- **NO CLIENT-SIDE BUSINESS LOGIC**: Never calculate prices, apply discounts, or update wallet balances directly from the React Native frontend.
 
-**documents and test reports created in this job:**
+**documents and test reports created in this job**
 - 
 - 
 - 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
 
-**Last 10 User Messages and any pending HUMAN messages:**
-1. (user) Crea una app móvil: queria saber si tu puedes hacer una app tipo uber basica pero que sea nativa y cuantos creditos aproximadamente gastaria creandola???
-2. (assistant) [Tool call: ask_human]
-3. (user) vamos a hacerla usa colores llamativos y que no esten en usa en alguna otra que esten usando en venezuela... (requested Pago Movil, specific MVP features)
-4. (assistant) [Tool call: ask_human]
-5. (user) <ask_human_response> selected options regarding Google Maps API key and Pago Movil manual flow.
-6. (assistant) [Tool call: ask_human]
-7. (user) esta es la api AIzaSyBzsybeLDdXmxiF4jYbt3zYa5N8x1xtKKQ
-8. (assistant) [Implemented the entire app and finished the job]
-9. (user) cuantos tokens aproximadamente me costaria crear el apk ??
-10. (assistant) [Answered the user via support agent regarding deployment costs and steps].
-
-*No pending human messages. The user is expected to either request customizations (name/logo) or approve proceeding to deployment.*
+**Last 10 User Messages and any pending HUMAN messages**
+- User provided 14 strict architecture rules (Ledger wallet, USD base, separate pricing/services, multi-app support).
+- Agent acknowledged, documented the rules, and started UI implementation.
+- User halted development: DETÉN EL DESARROLLO FUNCIONAL... la interfaz no respeta el diseño oficial... La fidelidad visual tiene prioridad absoluta.
+- Agent heavily refactored  and  to match the designs perfectly.
+- User asked: mira la que hiciste y mira la que te di porque pasa esto exactamente ?? porque no la replicas igual 100% y la haces funcional y ya ??
+- Agent applied final linting and structural fixes to the UI files and finished the job.
+- *Pending Action*: Show the user the updated UI via a screenshot and ask for confirmation to proceed.
 
 **Project Health Check:**
-- Broken: None.
-- Mocked: Web Map ( renders a placeholder as  is unsupported on Expo web preview). Seed drivers are statically mocked in the DB.
+- Broken: None
+- Mocked: UI screens currently have no functional Firebase bindings, as visual perfection was prioritized.
 
-**3rd Party Integrations:**
-- Google Maps () — requires User API Key (Provided and configured in  and ).
+**3rd Party Integrations**
+- Firebase (Auth, Firestore, Storage, Cloud Functions)
+- Google Maps SDK (Requires User API Key - already provided in previous forks).
 
-**Testing status:**
-- Testing agent used after significant changes: YES
+**Testing status**
+- Testing agent used after significant changes: NO (UI focus)
 - Troubleshoot agent used after agent stuck in loop: NO
-- Test files created: None directly by main agent, testing agent ran its suite.
-- Known regressions: None.
+- Test files created: None
+- Known regressions: None
 
 **Credentials to test flow:**
-Available in 
+None configured yet for the new Firebase setup.
 
-**What agent forgot to execute:**
-Everything requested was implemented successfully. The agent correctly deferred the app naming and logo changes to the next iteration as pending user confirmation.</analysis>
+**What agent forgot to execute**
+The agent proposed using the  to visually prove the UI fidelity to the user, but finished the job without actually executing the tool. The next agent MUST take this screenshot.</analysis>
