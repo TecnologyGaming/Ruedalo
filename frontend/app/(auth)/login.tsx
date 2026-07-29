@@ -6,10 +6,9 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
 import { useAuth } from "@/src/lib/auth";
 import { colors, fonts, radii, spacing, shadows } from "@/src/lib/theme";
-import { NeonButton } from "@/src/components/NeonButton";
 import { FieldInput } from "@/src/components/FieldInput";
 import { toast } from "@/src/components/Toast";
-import { Phone, Shield, ArrowRight, X, Sparkles, Mail, Lock } from "lucide-react-native";
+import { Phone, Shield, ArrowRight, X, Sparkles, Mail, Lock, User, HelpCircle } from "lucide-react-native";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -20,11 +19,13 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   
+  // Tab Selector: Pasajero | Conductor | Empresa
+  const [activeTab, setActiveTab] = useState<"passenger" | "driver" | "company">("passenger");
+
   // Phone OTP verification modal state
   const [otpModal, setOtpModal] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [sentOtp, setSentOtp] = useState("");
-  const [selectedRoleForPhone, setSelectedRoleForPhone] = useState<"passenger" | "driver" | "admin">("passenger");
 
   const onSendOtp = () => {
     if (!phone.trim() || phone.length < 7) {
@@ -32,23 +33,17 @@ export default function LoginScreen() {
       return;
     }
     
-    // Simulate finding account based on phone suffix or prefix
+    // Auto fill/redirect helper credentials based on phone
     let targetEmail = "pasajero@rideve.com";
     let targetPassword = "Demo1234!";
-    let roleName: "passenger" | "driver" | "admin" = "passenger";
     
-    if (phone.includes("2222222") || phone.includes("driver")) {
+    if (phone.includes("2222222") || activeTab === "driver") {
       targetEmail = "conductor@rideve.com";
-      roleName = "driver";
     } else if (phone.includes("0000000") || phone.includes("admin")) {
       targetEmail = "admin@rideve.com";
       targetPassword = "Admin1234!";
-      roleName = "admin";
     }
     
-    setSelectedRoleForPhone(roleName);
-    
-    // Generate simulated code
     const mockCode = Math.floor(100000 + Math.random() * 900000).toString();
     setSentOtp(mockCode);
     setLoading(true);
@@ -73,15 +68,15 @@ export default function LoginScreen() {
       let targetEmail = "pasajero@rideve.com";
       let targetPassword = "Demo1234!";
       
-      if (selectedRoleForPhone === "driver") {
+      if (phone.includes("2222222") || activeTab === "driver") {
         targetEmail = "conductor@rideve.com";
-      } else if (selectedRoleForPhone === "admin") {
+      } else if (phone.includes("0000000") || phone.includes("admin")) {
         targetEmail = "admin@rideve.com";
         targetPassword = "Admin1234!";
       }
       
       const u = await login(targetEmail, targetPassword);
-      toast(`Verificado. Bienvenido, ${u.name}`, "success");
+      toast(`Verificado. Bienvenido a Ruedalo, ${u.name}`, "success");
       
       if (u.role === "passenger") router.replace("/(passenger)");
       else if (u.role === "driver") router.replace("/(driver)");
@@ -114,17 +109,20 @@ export default function LoginScreen() {
 
   const quickFill = (role: "passenger" | "driver" | "admin") => {
     if (role === "passenger") {
-      setPhone("0414-1111111");
+      setActiveTab("passenger");
+      setPhone("04141111111");
       setEmail("pasajero@rideve.com");
       setPassword("Demo1234!");
     }
     if (role === "driver") {
-      setPhone("0414-2222222");
+      setActiveTab("driver");
+      setPhone("04142222222");
       setEmail("conductor@rideve.com");
       setPassword("Demo1234!");
     }
     if (role === "admin") {
-      setPhone("0000-0000000");
+      setActiveTab("passenger");
+      setPhone("00000000000");
       setEmail("admin@rideve.com");
       setPassword("Admin1234!");
     }
@@ -137,50 +135,58 @@ export default function LoginScreen() {
         bottomOffset={20}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Logo and country picker row styled like Yango */}
-        <View style={styles.rideryLogoArea}>
-          <Text style={styles.rideryBrand}>Yango <Text style={{ color: colors.primary, fontSize: 14 }}>●</Text></Text>
-          <View style={styles.globeIcon}><Text style={{ fontSize: 16 }}>🌐</Text></View>
+        {/* Customized Ruedalo Top Bar Logo area */}
+        <View style={styles.headerBrand}>
+          <View style={styles.logoBadgeCircle}>
+            <View style={styles.logoChevronSmall} />
+          </View>
+          <Text style={styles.logoBrandName}>Ruedalo</Text>
         </View>
 
-        {/* Hero Illustration with Yango Red Car and bold competitor layout */}
-        <View style={styles.heroSection}>
-          <View style={styles.headlineContainer}>
-            <Text style={styles.headlineMain}>CONFIABLES Y</Text>
-            <Text style={styles.headlineMain}>ECONÓMICOS</Text>
-            <Text style={[styles.headlineMain, { color: colors.primary }]}>VIAJES</Text>
-          </View>
+        {/* Roles Segment Selectors - Pasajero | Conductor | Empresa (02. BIENVENIDO) */}
+        <View style={styles.segmentRow}>
+          <TouchableOpacity 
+            style={[styles.segmentBtn, activeTab === "passenger" && styles.segmentBtnActive]}
+            onPress={() => setActiveTab("passenger")}
+          >
+            <User size={16} color={activeTab === "passenger" ? "#FFFFFF" : colors.textSecondary} />
+            <Text style={[styles.segmentBtnTxt, activeTab === "passenger" && styles.segmentBtnTxtActive]}>Pasajero</Text>
+          </TouchableOpacity>
           
-          <View style={styles.illustrationContainer}>
-            <View style={styles.illustrationFloorShadow} />
-            <View style={styles.illustrationMotorcycle}>
-              {/* Sleek Yango Red Passenger Car illustration */}
-              <View style={styles.carChassis} />
-              <View style={styles.carCab} />
-              <View style={styles.carWindowFront} />
-              <View style={styles.carWindowBack} />
-              <View style={styles.carWheelBack} />
-              <View style={styles.carWheelFront} />
-              <View style={styles.carLightFront} />
-              <View style={styles.carTaxiSign}><Text style={styles.carTaxiSignTxt}>TAXI</Text></View>
-            </View>
-          </View>
+          <TouchableOpacity 
+            style={[styles.segmentBtn, activeTab === "driver" && styles.segmentBtnActive]}
+            onPress={() => setActiveTab("driver")}
+          >
+            <User size={16} color={activeTab === "driver" ? "#FFFFFF" : colors.textSecondary} />
+            <Text style={[styles.segmentBtnTxt, activeTab === "driver" && styles.segmentBtnTxtActive]}>Conductor</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.segmentBtn, activeTab === "company" && styles.segmentBtnActive]}
+            onPress={() => setActiveTab("company")}
+          >
+            <User size={16} color={activeTab === "company" ? "#FFFFFF" : colors.textSecondary} />
+            <Text style={[styles.segmentBtnTxt, activeTab === "company" && styles.segmentBtnTxtActive]}>Empresa</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Headline text */}
+        <View style={styles.heroTextContainer}>
+          <Text style={styles.heroTitle}>¡Bienvenido!</Text>
+          <Text style={styles.heroDesc}>Inicia sesión o crea tu cuenta para solicitar tu próximo viaje.</Text>
         </View>
 
         {!useEmail ? (
-          // Phone Auth Form (Default)
-          <View style={styles.formContainer}>
-            <Text style={styles.formTitle}>Ingresa tu número de teléfono</Text>
-            <Text style={styles.formDesc}>Recibe un código SMS para verificar tu cuenta en segundos.</Text>
-            
+          // Phone Auth Form
+          <View style={styles.formCardContainer}>
             <View style={styles.phoneInputRow}>
-              <View style={styles.countryCode}>
-                <Text style={styles.flag}>🇻🇪</Text>
+              <View style={styles.countryCodeBadge}>
+                <Text style={styles.flagEmoji}>🇻🇪</Text>
                 <Text style={styles.countryCodeTxt}>+58</Text>
               </View>
               <TextInput
                 style={styles.phoneInput}
-                placeholder="424 1234567"
+                placeholder="Número de teléfono"
                 placeholderTextColor={colors.textMuted}
                 keyboardType="phone-pad"
                 value={phone}
@@ -190,7 +196,7 @@ export default function LoginScreen() {
             </View>
 
             <TouchableOpacity 
-              style={[styles.primaryBtn, loading && { opacity: 0.7 }]} 
+              style={[styles.continueBtn, loading && { opacity: 0.7 }]} 
               onPress={onSendOtp}
               disabled={loading}
               testID="send-otp-btn"
@@ -199,23 +205,40 @@ export default function LoginScreen() {
                 <ActivityIndicator color="#fff" />
               ) : (
                 <>
-                  <Text style={styles.primaryBtnTxt}>Continuar con teléfono</Text>
+                  <Text style={styles.continueBtnTxt}>Continuar</Text>
                   <ArrowRight size={18} color="#fff" />
                 </>
               )}
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.secondaryLink} onPress={() => setUseEmail(true)}>
-              <Mail size={16} color={colors.textSecondary} />
-              <Text style={styles.secondaryLinkTxt}>Iniciar sesión con correo</Text>
+            {/* Social Continuing Divider */}
+            <View style={styles.socialDividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerTxt}>o continúa con</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Google / Apple / Facebook Social login mock buttons */}
+            <View style={styles.socialButtonsRow}>
+              <TouchableOpacity style={styles.socialBtn} onPress={() => toast("Google Login Autenticando...", "info")}>
+                <Text style={styles.socialBtnTxt}>Google</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.socialBtn} onPress={() => toast("Apple Login Autenticando...", "info")}>
+                <Text style={styles.socialBtnTxt}>Apple</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.socialBtn} onPress={() => toast("Facebook Login Autenticando...", "info")}>
+                <Text style={styles.socialBtnTxt}>Facebook</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity style={styles.emailLoginLink} onPress={() => setUseEmail(true)}>
+              <Mail size={14} color={colors.textSecondary} />
+              <Text style={styles.emailLoginLinkTxt}>Iniciar sesión con correo</Text>
             </TouchableOpacity>
           </View>
         ) : (
-          // Email/Password Form
-          <View style={styles.formContainer}>
-            <Text style={styles.formTitle}>Iniciar sesión</Text>
-            <Text style={styles.formDesc}>Ingresa tus credenciales registradas para acceder.</Text>
-            
+          // Email Form
+          <View style={styles.formCardContainer}>
             <FieldInput
               label="Correo electrónico"
               value={email}
@@ -238,7 +261,7 @@ export default function LoginScreen() {
             />
 
             <TouchableOpacity 
-              style={[styles.primaryBtn, loading && { opacity: 0.7 }]} 
+              style={[styles.continueBtn, loading && { opacity: 0.7 }]} 
               onPress={onEmailLogin}
               disabled={loading}
               testID="login-submit-btn"
@@ -247,69 +270,65 @@ export default function LoginScreen() {
                 <ActivityIndicator color="#fff" />
               ) : (
                 <>
-                  <Text style={styles.primaryBtnTxt}>Ingresar</Text>
+                  <Text style={styles.continueBtnTxt}>Ingresar</Text>
                   <ArrowRight size={18} color="#fff" />
                 </>
               )}
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.secondaryLink} onPress={() => setUseEmail(false)}>
-              <Phone size={16} color={colors.textSecondary} />
-              <Text style={styles.secondaryLinkTxt}>Regresar a Login con Teléfono</Text>
+            <TouchableOpacity style={styles.emailLoginLink} onPress={() => setUseEmail(false)}>
+              <Phone size={14} color={colors.textSecondary} />
+              <Text style={styles.emailLoginLinkTxt}>Regresar a Login con Teléfono</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        <View style={styles.footer}>
+        <View style={styles.bottomLinkContainer}>
           <TouchableOpacity onPress={() => router.push("/(auth)/register")} testID="goto-register-btn">
-            <Text style={styles.registerLink}>
-              ¿No tienes cuenta? <Text style={styles.registerLinkHighlight}>Crea una aquí</Text>
+            <Text style={styles.registerLinkTxt}>
+              ¿No tienes cuenta? <Text style={{ color: colors.primary, fontFamily: fonts.bodyBold }}>Crear cuenta</Text>
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={{ marginTop: 8 }} onPress={() => router.push("/(passenger)/profile")}>
-            <Text style={styles.conductorLink}>Quiero ser conductor de RideVE</Text>
+          <TouchableOpacity style={{ marginTop: 14 }} onPress={() => toast("Sección de soporte / ayuda abierta", "info")}>
+            <Text style={styles.helpLinkTxt}>¿Necesitas ayuda?</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Demo Fast Account Switcher */}
-        <View style={styles.demoContainer}>
-          <Text style={styles.demoTitle}>Acceso de Demostración Rápido</Text>
-          <View style={styles.demoChipsRow}>
-            <TouchableOpacity style={styles.demoChip} onPress={() => quickFill("passenger")} testID="quick-passenger-btn">
-              <Text style={styles.demoChipTxt}>Pasajero</Text>
+        {/* Demo Fast Switcher Chips (Visual Verification & local testing) */}
+        <View style={styles.developerTestPanel}>
+          <Text style={styles.testPanelTitle}>Rápido Acceso de Pruebas</Text>
+          <View style={styles.testChipsRow}>
+            <TouchableOpacity style={styles.testChip} onPress={() => quickFill("passenger")} testID="quick-passenger-btn">
+              <Text style={styles.testChipTxt}>Pasajero</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.demoChip} onPress={() => quickFill("driver")} testID="quick-driver-btn">
-              <Text style={styles.demoChipTxt}>Conductor</Text>
+            <TouchableOpacity style={styles.testChip} onPress={() => quickFill("driver")} testID="quick-driver-btn">
+              <Text style={styles.testChipTxt}>Conductor</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.demoChip} onPress={() => quickFill("admin")} testID="quick-admin-btn">
-              <Text style={styles.demoChipTxt}>Admin</Text>
+            <TouchableOpacity style={styles.testChip} onPress={() => quickFill("admin")} testID="quick-admin-btn">
+              <Text style={styles.testChipTxt}>Admin</Text>
             </TouchableOpacity>
           </View>
         </View>
       </KeyboardAwareScrollView>
 
-      {/* OTP Verification Modal */}
+      {/* OTP Modal */}
       <Modal visible={otpModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Verifica tu teléfono</Text>
+              <Text style={styles.modalTitle}>Ingresa código SMS</Text>
               <TouchableOpacity onPress={() => setOtpModal(false)}>
                 <X size={22} color={colors.textPrimary} />
               </TouchableOpacity>
             </View>
             
-            <View style={styles.shieldBadge}>
-              <Shield size={24} color={colors.success} />
-              <Text style={styles.shieldTxt}>Código de seguridad enviado</Text>
+            <View style={styles.otpShieldBadge}>
+              <Shield size={20} color={colors.success} />
+              <Text style={styles.otpShieldTxt}>Código enviado con éxito</Text>
             </View>
 
-            <Text style={styles.modalDesc}>
-              Hemos enviado un código SMS de 6 dígitos a tu número <Text style={{ fontFamily: fonts.bodyBold }}>+58 {phone}</Text>.
-            </Text>
-
             <TextInput
-              style={styles.otpInput}
+              style={styles.otpCodeInput}
               placeholder="0 0 0 0 0 0"
               placeholderTextColor={colors.textMuted}
               keyboardType="number-pad"
@@ -319,12 +338,8 @@ export default function LoginScreen() {
               testID="otp-verification-input"
             />
 
-            <TouchableOpacity style={styles.modalVerifyBtn} onPress={onVerifyOtp} testID="submit-otp-btn">
-              <Text style={styles.modalVerifyBtnTxt}>Verificar código</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={() => toast(`Tu código es: ${sentOtp}`, "info")}>
-              <Text style={styles.resendCodeTxt}>Reenviar código</Text>
+            <TouchableOpacity style={styles.verifyOtpBtn} onPress={onVerifyOtp} testID="submit-otp-btn">
+              <Text style={styles.verifyOtpBtnTxt}>Verificar código</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -335,63 +350,61 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#FFFFFF" },
-  scroll: { flexGrow: 1, padding: spacing.md, justifyContent: "space-between", gap: spacing.md, backgroundColor: "#FFFFFF" },
+  scroll: { flexGrow: 1, padding: spacing.md, gap: spacing.md, backgroundColor: "#FFFFFF" },
   
-  rideryLogoArea: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10, paddingHorizontal: 4 },
-  rideryBrand: { fontSize: 28, fontFamily: fonts.headingBold, color: "#111317", letterSpacing: -0.5 },
-  globeIcon: { width: 34, height: 34, borderRadius: 999, backgroundColor: "#F1F2F6", alignItems: "center", justifyContent: "center" },
+  headerBrand: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 10, paddingHorizontal: 4 },
+  logoBadgeCircle: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" },
+  logoChevronSmall: { width: 12, height: 12, borderWidth: 2.5, borderColor: "#FFFFFF", borderLeftWidth: 0, borderBottomWidth: 0, transform: [{ rotate: "45deg" }], marginLeft: -3, marginTop: 1.5 },
+  logoBrandName: { fontSize: 22, fontFamily: fonts.headingBold, color: colors.textPrimary, letterSpacing: -0.5 },
 
-  heroSection: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginVertical: 14 },
-  headlineContainer: { gap: 2, flex: 1.1 },
-  headlineMain: { fontSize: 26, fontFamily: fonts.headingBold, color: "#111317", lineHeight: 30, letterSpacing: -1 },
+  segmentRow: { flexDirection: "row", backgroundColor: colors.bg, borderRadius: radii.lg, padding: 4, marginVertical: 10, borderWidth: 1, borderColor: colors.border },
+  segmentBtn: { flex: 1, flexDirection: "row", height: 40, borderRadius: radii.md, alignItems: "center", justifyContent: "center", gap: 6 },
+  segmentBtnActive: { backgroundColor: colors.primary, ...shadows.btn },
+  segmentBtnTxt: { color: colors.textSecondary, fontFamily: fonts.bodyMedium, fontSize: 13 },
+  segmentBtnTxtActive: { color: "#FFFFFF", fontFamily: fonts.bodyBold },
 
-  // Yango Red Passenger Taxi Car Illustration
-  illustrationContainer: { flex: 1.2, height: 150, position: "relative", justifyContent: "center", alignItems: "center" },
-  illustrationFloorShadow: { width: 110, height: 10, borderRadius: 999, backgroundColor: "rgba(0,0,0,0.06)", position: "absolute", bottom: 20 },
-  illustrationMotorcycle: { width: 100, height: 80, position: "relative" },
-  carChassis: { position: "absolute", bottom: 15, left: 10, width: 80, height: 22, backgroundColor: colors.primary, borderRadius: 6 },
-  carCab: { position: "absolute", bottom: 33, left: 24, width: 44, height: 18, backgroundColor: "#1E293B", borderTopLeftRadius: 10, borderTopRightRadius: 12 },
-  carWindowFront: { position: "absolute", bottom: 35, right: 34, width: 16, height: 12, backgroundColor: "#FFFFFF", borderTopRightRadius: 8, opacity: 0.8 },
-  carWindowBack: { position: "absolute", bottom: 35, left: 28, width: 16, height: 12, backgroundColor: "#FFFFFF", borderTopLeftRadius: 6, opacity: 0.8 },
-  carWheelBack: { position: "absolute", bottom: 6, left: 18, width: 22, height: 22, borderRadius: 999, backgroundColor: "#F1F2F6", borderWidth: 4, borderColor: "#111317" },
-  carWheelFront: { position: "absolute", bottom: 6, right: 18, width: 22, height: 22, borderRadius: 999, backgroundColor: "#F1F2F6", borderWidth: 4, borderColor: "#111317" },
-  carLightFront: { position: "absolute", bottom: 22, right: 10, width: 6, height: 8, backgroundColor: "#FBBF24", borderTopRightRadius: 4, borderBottomRightRadius: 4 },
-  carTaxiSign: { position: "absolute", bottom: 50, left: 38, backgroundColor: "#FFB800", paddingHorizontal: 4, paddingVertical: 1, borderRadius: 2, borderWidth: 1, borderColor: "#111317" },
-  carTaxiSignTxt: { color: "#111317", fontSize: 6, fontFamily: fonts.headingBold },
+  heroTextContainer: { marginVertical: 10, gap: 6 },
+  heroTitle: { fontSize: 26, fontFamily: fonts.headingBold, color: colors.textPrimary, letterSpacing: -0.5 },
+  heroDesc: { fontSize: 14, fontFamily: fonts.body, color: colors.textSecondary, lineHeight: 20 },
 
-  formContainer: { backgroundColor: colors.surface, padding: 20, borderRadius: radii.xl, gap: 14, borderWidth: 1, borderColor: colors.border, ...shadows.card },
-  formTitle: { color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 16, letterSpacing: -0.2 },
-  formDesc: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 13, lineHeight: 18 },
+  formCardContainer: { backgroundColor: colors.surface, padding: 20, borderRadius: radii.lg, gap: 14, borderWidth: 1, borderColor: colors.border, ...shadows.card },
   phoneInputRow: { flexDirection: "row", gap: 10 },
-  countryCode: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, paddingHorizontal: 10, height: 50 },
-  flag: { fontSize: 18 },
+  countryCodeBadge: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, paddingHorizontal: 10, height: 50 },
+  flagEmoji: { fontSize: 18 },
   countryCodeTxt: { color: colors.textPrimary, fontFamily: fonts.bodyBold, fontSize: 14 },
   phoneInput: { flex: 1, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, paddingHorizontal: 14, height: 50, color: colors.textPrimary, fontFamily: fonts.bodyMedium, fontSize: 15 },
-  primaryBtn: { backgroundColor: colors.primary, height: 52, borderRadius: radii.xl, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 8, ...shadows.neonPrimary },
-  primaryBtnTxt: { color: "#fff", fontFamily: fonts.bodyBold, fontSize: 15 },
-  secondaryLink: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 8, marginTop: 2 },
-  secondaryLinkTxt: { color: colors.textSecondary, fontFamily: fonts.bodyMedium, fontSize: 13 },
   
-  footer: { alignItems: "center", gap: 6 },
-  registerLink: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 13 },
-  registerLinkHighlight: { color: colors.secondary, fontFamily: fonts.bodyBold },
-  conductorLink: { color: colors.textSecondary, fontFamily: fonts.bodyBold, fontSize: 13, textDecorationLine: "underline" },
+  continueBtn: { backgroundColor: colors.primary, height: 52, borderRadius: radii.lg, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 8, ...shadows.btn },
+  continueBtnTxt: { color: "#FFFFFF", fontFamily: fonts.bodyBold, fontSize: 15 },
 
-  demoContainer: { backgroundColor: colors.elevated, padding: 14, borderRadius: radii.lg, gap: 10, marginTop: 6 },
-  demoTitle: { color: colors.textSecondary, fontFamily: fonts.bodyBold, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, textAlign: "center" },
-  demoChipsRow: { flexDirection: "row", gap: 8 },
-  demoChip: { flex: 1, backgroundColor: colors.surface, height: 38, borderRadius: radii.full, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border, ...shadows.card },
-  demoChipTxt: { color: colors.textPrimary, fontFamily: fonts.bodyMedium, fontSize: 11 },
-  
+  socialDividerRow: { flexDirection: "row", alignItems: "center", gap: 10, marginVertical: 14 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
+  dividerTxt: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 12 },
+
+  socialButtonsRow: { flexDirection: "row", gap: 10 },
+  socialBtn: { flex: 1, height: 46, borderRadius: radii.md, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
+  socialBtnTxt: { color: colors.textPrimary, fontFamily: fonts.bodyBold, fontSize: 12 },
+
+  emailLoginLink: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 8, marginTop: 4 },
+  emailLoginLinkTxt: { color: colors.textSecondary, fontFamily: fonts.bodyMedium, fontSize: 13 },
+
+  bottomLinkContainer: { alignItems: "center", marginVertical: 10 },
+  registerLinkTxt: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 13 },
+  helpLinkTxt: { color: colors.textSecondary, fontFamily: fonts.bodyBold, fontSize: 13, textDecorationLine: "underline" },
+
+  developerTestPanel: { backgroundColor: colors.elevated, padding: 14, borderRadius: radii.lg, gap: 10, marginTop: 10 },
+  testPanelTitle: { color: colors.textSecondary, fontFamily: fonts.bodyBold, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, textAlign: "center" },
+  testChipsRow: { flexDirection: "row", gap: 8 },
+  testChip: { flex: 1, backgroundColor: colors.surface, height: 38, borderRadius: radii.full, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border, ...shadows.card },
+  testChipTxt: { color: colors.textPrimary, fontFamily: fonts.bodyMedium, fontSize: 11 },
+
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
   modalContent: { backgroundColor: colors.surface, borderTopLeftRadius: radii.xl, borderTopRightRadius: radii.xl, padding: 22, paddingBottom: 40, gap: 14 },
   modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   modalTitle: { color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 18 },
-  shieldBadge: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "center", backgroundColor: "#ECFDF5", paddingVertical: 6, paddingHorizontal: 12, borderRadius: radii.full, marginTop: 4 },
-  shieldTxt: { color: colors.success, fontFamily: fonts.bodyBold, fontSize: 11 },
-  modalDesc: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 13, textAlign: "center", paddingHorizontal: 10 },
-  otpInput: { backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, height: 56, color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 22, textAlign: "center", letterSpacing: 8, marginVertical: 10 },
-  modalVerifyBtn: { backgroundColor: colors.success, height: 48, borderRadius: radii.xl, alignItems: "center", justifyContent: "center", ...shadows.neonSecondary },
-  modalVerifyBtnTxt: { color: "#fff", fontFamily: fonts.bodyBold, fontSize: 15 },
-  resendCodeTxt: { color: colors.secondary, fontFamily: fonts.bodyBold, fontSize: 13, textAlign: "center", marginTop: 4 },
+  otpShieldBadge: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "center", backgroundColor: "#ECFDF5", paddingVertical: 6, paddingHorizontal: 12, borderRadius: radii.full, marginTop: 4 },
+  otpShieldTxt: { color: colors.success, fontFamily: fonts.bodyBold, fontSize: 11 },
+  otpCodeInput: { backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, height: 56, color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 22, textAlign: "center", letterSpacing: 8, marginVertical: 10 },
+  verifyOtpBtn: { backgroundColor: colors.success, height: 48, borderRadius: radii.lg, alignItems: "center", justifyContent: "center", ...shadows.neonSecondary },
+  verifyOtpBtnTxt: { color: "#fff", fontFamily: fonts.bodyBold, fontSize: 15 },
 });
