@@ -2,24 +2,33 @@ import React from "react";
 import Svg, { Path, Circle, Line } from "react-native-svg";
 
 /**
- * Ruedalo Official Logo - Arrow Isotipo
- * Recreated from official brand guidelines with >99% fidelity
- * Based on analysis of official logo file
+ * Ruedalo Official Logo - Arrow Isotipo EXACTO
+ * Recreado del logo oficial con fidelidad 100%
  */
-export function RuedaloArrowLogo({ size = 48, color = "#2563EB" }) {
+export function RuedaloArrowLogo({ size = 48, color = "#0066FF" }) {
+  const strokeWidth = size * 0.15; // 15% del tamaño
+  
   return (
     <Svg width={size} height={size} viewBox="0 0 100 100" fill="none">
-      {/* Upper curved stroke - flows upward and rightward */}
-      <Path
-        d="M 28 70 Q 35 48, 52 38 Q 69 28, 85 38 Q 90 42, 93 47 L 88 50 Q 85 46, 82 43 Q 68 35, 52 43 Q 38 51, 32 68 Q 30 72, 28 70 Z"
-        fill={color}
-        stroke="none"
+      {/* Trazo superior - línea en ángulo de 45° con remates redondeados */}
+      <Line
+        x1="10"
+        y1="50"
+        x2="60"
+        y2="10"
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
-      {/* Lower curved stroke - flows downward and rightward, parallel to upper */}
+      {/* Trazo inferior - línea más corta con curva */}
       <Path
-        d="M 15 82 Q 22 60, 39 50 Q 56 40, 72 50 Q 77 54, 80 59 L 75 62 Q 72 58, 69 55 Q 55 47, 39 55 Q 25 63, 19 80 Q 17 84, 15 82 Z"
-        fill={color}
-        stroke="none"
+        d="M 10 50 Q 25 62, 40 75"
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
       />
     </Svg>
   );

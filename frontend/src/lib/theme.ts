@@ -1,37 +1,37 @@
 // Ruedalo Design System v1.0 — Theme Specification
-// EXTRACTED PIXEL-PERFECT from Official Logo and Design Mockups
+// COLORES OFICIALES EXACTOS DEL LOGO
 export const colors = {
-  // Brand Palette (Official Ruedalo Colors from Logo)
-  primary: "#2563EB",       // Azul Ruedalo OFICIAL (RGB 37, 99, 235 / Pantone 7686 C)
-  primaryDim: "#0B132B",    // Azul Oscuro (para gradientes y fondos oscuros)
-  primaryLight: "#2563EB",  // Mismo azul principal
-  success: "#10B981",       // Energetic Emerald Green (Wallet, Savings, Success)
+  // Brand Palette (COLORES OFICIALES del logo de Ruedalo)
+  primary: "#0066FF",       // Azul Ruedalo OFICIAL del isotipo
+  primaryDim: "#0B132B",    // Azul medianoche (texto "Ruedalo")
+  primarySlogan: "#2E62FF", // Azul del slogan "Muévete contigo"
+  success: "#10B981",       // Energetic Emerald Green
   successDim: "#059669",
-  warning: "#F59E0B",       // Amber (Alerts, Pending states)
-  danger: "#EF4444",        // Rose Red (SOS, Rejections, Errors)
+  warning: "#F59E0B",
+  danger: "#EF4444",
   
-  // Neutral Colors (Exact from mockup)
-  bg: "#F8FAFC",            // Background off-white
-  surface: "#FFFFFF",       // Card and modal surfaces
-  elevated: "#F1F5F9",      // Inner gray sections
-  border: "#E2E8F0",        // Dividers and structural borders
-  borderLight: "#E5E5EA",   // Lighter borders for inactive elements
-  borderFocus: "#2563EB",   // Focused inputs (uses official blue)
-  overlay: "rgba(15,23,42,0.45)", // Semi-transparent modal sheet bg
+  // Neutral Colors
+  bg: "#F8FAFC",
+  surface: "#FFFFFF",
+  elevated: "#F1F5F9",
+  border: "#E2E8F0",
+  borderLight: "#E5E5EA",
+  borderFocus: "#0066FF",   // Azul oficial
+  overlay: "rgba(15,23,42,0.45)",
   
-  // Typography Colors (Exact from mockup and logo)
-  textPrimary: "#000000",   // Pure black for primary text (official from logo)
-  textSecondary: "#6D6D72", // Secondary text
-  textMuted: "#8A8A8E",     // Placeholder text in inputs
+  // Typography Colors
+  textPrimary: "#0B132B",   // Azul medianoche (del logo)
+  textSecondary: "#6D6D72",
+  textMuted: "#8A8A8E",
   
-  // Splash Screen Colors
-  splashGradientTop: "#0B132B",    // Official dark blue from logo gradient
-  splashGradientBottom: "#030812", // Bottom gradient
-  splashSkyline: "#1E3B8A",        // Skyline building blocks
+  // Splash Screen
+  splashGradientTop: "#0B132B",
+  splashGradientBottom: "#030812",
+  splashSkyline: "#1E3B8A",
   
   // Card Backgrounds
-  cardLightBlue: "#F2F2F7",     // Light gray card backgrounds
-  cardSecurityBg: "#E5F0FF",    // Security card light blue background
+  cardLightBlue: "#F2F2F7",
+  cardSecurityBg: "#E5F0FF",
 };
 
 export const fonts = {
