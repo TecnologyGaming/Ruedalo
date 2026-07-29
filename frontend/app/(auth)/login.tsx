@@ -116,7 +116,7 @@ export default function LoginScreen() {
         >
           {/* Logo Header - Exact positioning from mockup */}
           <View style={styles.logoHeader}>
-            <RuedaloArrowLogo size={50} color={colors.primaryLight} />
+            <RuedaloArrowLogo size={50} color={colors.primary} />
             <View style={styles.logoBrandTextBlock}>
               <Text style={styles.logoBrandTitle}>Ruedalo</Text>
               <Text style={styles.logoBrandSubtitle}>Muévete contigo.</Text>

@@ -31,8 +31,10 @@ export default function SplashScreen() {
     <>
       <StatusBar barStyle="light-content" backgroundColor={colors.splashGradientTop} />
       <LinearGradient
-        colors={[colors.splashGradientTop, colors.splashGradientBottom]}
+        colors={[colors.primaryDim, colors.primary]}
         style={styles.container}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
       >
         {/* City Skyline - Caracas/Avila Silhouette */}
         <View style={styles.skylineContainer}>

@@ -1,10 +1,10 @@
 // Ruedalo Design System v1.0 — Theme Specification
-// EXTRACTED PIXEL-PERFECT from Official Design Mockups
+// EXTRACTED PIXEL-PERFECT from Official Logo and Design Mockups
 export const colors = {
-  // Brand Palette (Official Ruedalo Colors)
-  primary: "#0052CC",       // Ruedalo Main Blue (Extracted from mockup)
-  primaryDim: "#0045AF",    // Ruedalo Secondary Blue (Darker accent)
-  primaryLight: "#26A0EF",  // Logo Blue accent (Lighter variant)
+  // Brand Palette (Official Ruedalo Colors from Logo)
+  primary: "#2563EB",       // Azul Ruedalo OFICIAL (RGB 37, 99, 235 / Pantone 7686 C)
+  primaryDim: "#0B132B",    // Azul Oscuro (para gradientes y fondos oscuros)
+  primaryLight: "#2563EB",  // Mismo azul principal
   success: "#10B981",       // Energetic Emerald Green (Wallet, Savings, Success)
   successDim: "#059669",
   warning: "#F59E0B",       // Amber (Alerts, Pending states)
@@ -16,17 +16,17 @@ export const colors = {
   elevated: "#F1F5F9",      // Inner gray sections
   border: "#E2E8F0",        // Dividers and structural borders
   borderLight: "#E5E5EA",   // Lighter borders for inactive elements
-  borderFocus: "#0052CC",   // Focused inputs
+  borderFocus: "#2563EB",   // Focused inputs (uses official blue)
   overlay: "rgba(15,23,42,0.45)", // Semi-transparent modal sheet bg
   
-  // Typography Colors (Exact from mockup)
-  textPrimary: "#000000",   // Pure black for primary text
+  // Typography Colors (Exact from mockup and logo)
+  textPrimary: "#000000",   // Pure black for primary text (official from logo)
   textSecondary: "#6D6D72", // Secondary text
   textMuted: "#8A8A8E",     // Placeholder text in inputs
   
   // Splash Screen Colors
-  splashGradientTop: "#0B1A37",    // Splash background gradient top
-  splashGradientBottom: "#030812", // Splash background gradient bottom
+  splashGradientTop: "#0B132B",    // Official dark blue from logo gradient
+  splashGradientBottom: "#030812", // Bottom gradient
   splashSkyline: "#1E3B8A",        // Skyline building blocks
   
   // Card Backgrounds
