@@ -3,30 +3,32 @@ import Svg, { Path, Circle, Line } from "react-native-svg";
 
 /**
  * Ruedalo Official Logo - EXACTO
- * Dos curvas: una hacia arriba-derecha, otra hacia abajo-derecha
+ * DOS líneas paralelas hacia arriba-derecha
  */
 export function RuedaloArrowLogo({ size = 48, color = "#0066FF" }) {
-  const strokeWidth = size * 0.16;
+  const strokeWidth = size * 0.20;
   
   return (
     <Svg width={size} height={size} viewBox="0 0 100 100" fill="none">
-      {/* Curva SUPERIOR - apunta hacia arriba-derecha */}
-      <Path
-        d="M 15 55 Q 30 40, 45 30 Q 60 20, 75 25"
+      {/* Línea SUPERIOR - hacia arriba-derecha */}
+      <Line
+        x1="25"
+        y1="75"
+        x2="75"
+        y2="25"
         stroke={color}
         strokeWidth={strokeWidth}
         strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
       />
-      {/* Curva INFERIOR - apunta hacia abajo-derecha */}
-      <Path
-        d="M 15 55 Q 30 70, 45 80 Q 60 90, 75 85"
+      {/* Línea INFERIOR - paralela, hacia arriba-derecha */}
+      <Line
+        x1="15"
+        y1="85"
+        x2="65"
+        y2="35"
         stroke={color}
         strokeWidth={strokeWidth}
         strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
       />
     </Svg>
   );
