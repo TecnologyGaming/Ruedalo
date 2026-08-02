@@ -107,6 +107,7 @@ class UserOut(BaseModel):
     referral_code: Optional[str] = None
     referred_by: Optional[str] = None
     completed_rides_count: int = 0
+    is_active: bool = True
 
 class ProfileUpdateIn(BaseModel):
     cedula: Optional[str] = None
@@ -284,6 +285,7 @@ def user_to_out(u: dict) -> UserOut:
         referral_code=u.get("referral_code"),
         referred_by=u.get("referred_by"),
         completed_rides_count=int(u.get("completed_rides_count", 0)),
+        is_active=bool(u.get("is_active", True)),
     )
 
 async def get_current_user(token: Optional[str] = Depends(oauth2_scheme)) -> dict:
@@ -299,6 +301,8 @@ async def get_current_user(token: Optional[str] = Depends(oauth2_scheme)) -> dic
     user = await users_col.find_one({"id": user_id}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
+    if not user.get("is_active", True):
+        raise HTTPException(status_code=403, detail="Tu cuenta ha sido desactivada por el administrador")
     return user
 
 def require_roles(*allowed: str):
@@ -1166,6 +1170,26 @@ async def apply_promocode(body: ApplyPromoIn, user=Depends(get_current_user)):
         "added_balance": added_bal,
         "discount_usd": float(promo.get("discount_usd", 0))
     }
+
+@api.get("/admin/drivers/locations")
+async def admin_drivers_locations(_=Depends(require_roles("admin"))):
+    drivers = await users_col.find(
+        {"role": "driver", "is_online": True, "lat": {"$ne": None}},
+        {"id": 1, "name": 1, "lat": 1, "lng": 1, "phone": 1, "_id": 0}
+    ).to_list(100)
+    return drivers
+
+@api.post("/admin/users/{user_id}/toggle-active")
+async def admin_toggle_user_active(user_id: str, _=Depends(require_roles("admin"))):
+    target = await users_col.find_one({"id": user_id})
+    if not target:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    current_state = bool(target.get("is_active", True))
+    new_state = not current_state
+    
+    await users_col.update_one({"id": user_id}, {"$set": {"is_active": new_state}})
+    return {"success": True, "is_active": new_state}
 
 # ============================================================
 # Health

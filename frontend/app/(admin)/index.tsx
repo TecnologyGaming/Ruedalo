@@ -7,6 +7,7 @@ import { Check, X } from "lucide-react-native";
 import { api } from "@/src/lib/api";
 import { colors, fonts, radii, spacing, shadows } from "@/src/lib/theme";
 import { toast } from "@/src/components/Toast";
+import { RideMap } from "@/src/components/RideMap";
 
 const FILTERS = [
   { key: "pending", label: "Pendientes" },
@@ -19,18 +20,21 @@ export default function AdminRecharges() {
   const [filter, setFilter] = useState("pending");
   const [items, setItems] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
+  const [driverLocations, setDriverLocations] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [working, setWorking] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
       const q = filter === "all" ? "" : `?status_filter=${filter}`;
-      const [list, s] = await Promise.all([
+      const [list, s, locs] = await Promise.all([
         api<any[]>(`/admin/recharges${q}`),
         api<any>("/admin/stats"),
+        api<any[]>("/admin/drivers/locations"),
       ]);
       setItems(list);
       setStats(s);
+      setDriverLocations(locs);
     } catch (e: any) {
       toast(e?.message ?? "Error", "error");
     }
@@ -71,6 +75,27 @@ export default function AdminRecharges() {
           <Stat label="Usuarios" value={stats.total_users} color={colors.secondary} />
           <Stat label="Online" value={stats.online_drivers} color={colors.primary} />
           <Stat label="Viajes" value={stats.completed_rides} color={colors.tertiary} />
+        </View>
+      )}
+
+      {/* Visual Map showing Active/Online Drivers */}
+      {driverLocations.length > 0 && (
+        <View style={styles.mapCard}>
+          <Text style={styles.mapTitle}>Mapa de Conductores Activos ({driverLocations.length})</Text>
+          <View style={styles.mapWrapper}>
+            <RideMap 
+              center={{ lat: 10.4998, lng: -66.8517 }} 
+              markers={driverLocations.map((d) => ({
+                id: d.id,
+                lat: d.lat,
+                lng: d.lng,
+                type: "driver" as const,
+                label: d.name?.[0] || "C",
+              }))}
+              style={{ flex: 1 }}
+              showsUserLocation={false}
+            />
+          </View>
         </View>
       )}
 
@@ -174,4 +199,9 @@ const styles = StyleSheet.create({
   actions: { flexDirection: "row", gap: 8, marginTop: 10 },
   actBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 12, borderRadius: 999 },
   actTxt: { color: "#fff", fontFamily: fonts.bodyBold, fontSize: 13 },
+
+  // Map styles
+  mapCard: { marginHorizontal: spacing.md, marginBottom: 12, padding: 12, borderRadius: radii.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  mapTitle: { color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 13, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 },
+  mapWrapper: { height: 180, borderRadius: radii.md, overflow: "hidden", borderWidth: 1, borderColor: colors.border },
 });

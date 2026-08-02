@@ -51,6 +51,16 @@ export default function AdminUsers() {
     }
   };
 
+  const toggleActive = async (userId: string) => {
+    try {
+      const res = await api<any>(`/admin/users/${userId}/toggle-active`, { method: "POST" });
+      toast(res.is_active ? "Usuario activado con éxito" : "Usuario desactivado con éxito", "info");
+      await load();
+    } catch (e: any) {
+      toast(e?.message ?? "Error al cambiar estado del usuario", "error");
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={styles.header}>
@@ -70,8 +80,19 @@ export default function AdminUsers() {
               <Text style={styles.phone}>{item.phone}</Text>
             </View>
             <View style={{ alignItems: "flex-end", gap: 4 }}>
-              <View style={[styles.badge, { borderColor: ROLE_COLOR[item.role] }]}>
-                <Text style={[styles.badgeTxt, { color: ROLE_COLOR[item.role] }]}>{item.role.toUpperCase()}</Text>
+              <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+                <TouchableOpacity 
+                  style={[styles.activeBtn, item.is_active !== false ? styles.activeBtnOn : styles.activeBtnOff]}
+                  onPress={() => toggleActive(item.id)}
+                  testID={`toggle-active-${item.id}`}
+                >
+                  <Text style={[styles.activeBtnTxt, item.is_active !== false ? styles.activeBtnTxtOn : styles.activeBtnTxtOff]}>
+                    {item.is_active !== false ? "Activo" : "Bloqueado"}
+                  </Text>
+                </TouchableOpacity>
+                <View style={[styles.badge, { borderColor: ROLE_COLOR[item.role] }]}>
+                  <Text style={[styles.badgeTxt, { color: ROLE_COLOR[item.role] }]}>{item.role.toUpperCase()}</Text>
+                </View>
               </View>
               <TouchableOpacity 
                 style={styles.balContainer} 
@@ -185,6 +206,13 @@ const styles = StyleSheet.create({
   balContainer: { alignItems: "flex-end", backgroundColor: colors.elevated, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, marginTop: 4, borderWidth: 1, borderColor: colors.border },
   balLabel: { color: colors.textSecondary, fontFamily: fonts.bodyMedium, fontSize: 9, marginTop: 1 },
   onlineDot: { fontFamily: fonts.body, fontSize: 10, marginTop: 4 },
+
+  activeBtn: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, borderWidth: 1 },
+  activeBtnOn: { borderColor: colors.success || "#10B981", backgroundColor: "#ECFDF5" },
+  activeBtnOff: { borderColor: colors.danger, backgroundColor: "#FEF2F2" },
+  activeBtnTxt: { fontFamily: fonts.bodyBold, fontSize: 9, letterSpacing: 0.5 },
+  activeBtnTxtOn: { color: colors.success || "#10B981" },
+  activeBtnTxtOff: { color: colors.danger },
 
   // Modal Styles
   modalOverlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: "center", padding: spacing.lg },

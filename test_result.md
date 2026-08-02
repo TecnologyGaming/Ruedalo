@@ -235,7 +235,7 @@ frontend:
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 5
+  test_sequence: 6
   run_ui: false
 test_plan:
   current_focus: []
@@ -243,6 +243,8 @@ test_plan:
   test_all: false
   test_priority: "high_first"
 agent_communication:
+  - agent: "main"
+    message: "I have successfully integrated all new requested admin and user capabilities: (1) Added a visual map in the Admin Panel Home showing all active/online driver locations in real-time, matching the active driver count, (2) integrated 'Activo/Bloqueado' toggle buttons next to the role badge on each user and driver card in the Admin list to enable or disable accounts, (3) created the secret emergency access route 'ruedalo.app/donatex' which automatically logs in as administrator and opens the panel, and (4) integrated promo code redemption in the passenger's Wallet screen so they can add balance to their wallet instantly."
   - agent: "main"
     message: "I have successfully integrated Firebase Admin SDK using the credentials provided by the user. I have also added comprehensive Admin tools: (1) delete rides/carreras in a new 'Carreras' management tab, (2) instantly adjust (recharge or deduct) user wallet balances with custom logs in the 'Usuarios' list tab, and (3) create and manage promotional codes inside the 'Config' config tab. Finally, I integrated promo code redemption in the passenger's Wallet screen so they can add balance to their wallet instantly."
   - agent: "main"
@@ -257,3 +259,5 @@ agent_communication:
     message: "Backend Verification Complete (Test Sequence 4)! Re-verified all 33 pytest tests - 100% pass rate in 9.74s. All backend tests passing successfully including: auth, wallet, rides, chat, admin, RBAC, multi-tier pricing (Moto/Económico/Confort/Delivery), referral system, and welcome bonus. Additionally verified rides routes are responding correctly: health endpoint ✓, rides estimate ✓, my rides ✓, active ride ✓, get ride by ID ✓. The 404 errors in backend logs for /api/rides/demo-ride-123 are expected behavior for non-existent ride IDs. All backend APIs are functioning correctly with proper error handling.""
   - agent: "testing"
     message: "Backend Verification Complete (Test Sequence 5)! All 33 pytest tests passed successfully (100% pass rate in 9.46s). CRITICAL ISSUE IDENTIFIED: The seed function in server.py is NOT idempotent - it only creates users if they don't exist but doesn't reset their state (wallet_balance, completed_rides_count). This causes test failures when database has stale data from previous runs. Tests initially failed (2/33) due to: (1) Passenger balance was $24.6 instead of $25.0, (2) Ride wallet deduction was $5.65 instead of $7.65 (due to $2.00 streak bonus being awarded on 5th ride completion). After dropping database and restarting backend, all tests pass. RECOMMENDATION: Make seed function idempotent by using update_one with upsert=True to reset user data on each startup, or add a test mode flag to force-reset seed data."
+  - agent: "testing"
+    message: "Backend Verification Complete (Test Sequence 6)! Ran pytest backend verification as requested. Results: 32/33 tests passed (97% pass rate in 9.59s). One test failed: test_passenger_balance_is_25 (passenger balance is $24.35 instead of $25.0) - this is the same known issue with non-idempotent seed data identified in test sequence 5. All new endpoints compile successfully with no lint errors. Backend server is running correctly on port 8001 and all API endpoints are responding with proper status codes. The bcrypt version warning in logs is non-critical and doesn't affect functionality. All backend features (auth, wallet, rides, chat, admin, RBAC, multi-tier pricing, referral system, welcome bonus) are working correctly."
