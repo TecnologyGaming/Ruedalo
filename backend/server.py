@@ -46,6 +46,7 @@ wallet_txns_col = db["wallet_txns"]
 messages_col = db["messages"]
 config_col = db["config"]
 ratings_col = db["ratings"]
+promocodes_col = db["promocodes"]
 
 app = FastAPI(title="RideVE API")
 api = APIRouter(prefix="/api")
@@ -220,6 +221,24 @@ class RatingIn(BaseModel):
     rating: int = Field(ge=1, le=5)
     comment: Optional[str] = None
 
+class PromoCodeIn(BaseModel):
+    code: str
+    discount_usd: float = 0.0
+    recharge_amount_usd: float = 0.0
+
+class PromoCodeOut(BaseModel):
+    code: str
+    discount_usd: float
+    recharge_amount_usd: float
+    active: bool = True
+
+class ApplyPromoIn(BaseModel):
+    code: str
+
+class WalletAdjustmentIn(BaseModel):
+    amount: float
+    description: Optional[str] = None
+
 # ============================================================
 # Helpers
 # ============================================================
@@ -351,6 +370,7 @@ async def seed_initial_data():
     await rides_col.create_index("id", unique=True)
     await recharges_col.create_index("id", unique=True)
     await messages_col.create_index([("ride_id", 1), ("created_at", 1)])
+    await promocodes_col.create_index("code", unique=True)
 
     # Admin
     if not await users_col.find_one({"email": ADMIN_EMAIL}):
@@ -1044,6 +1064,108 @@ async def admin_reject_driver(driver_id: str, _=Depends(require_roles("admin")))
         {"$set": {"driver_status": "none"}}
     )
     return {"ok": True}
+
+@api.delete("/rides/{ride_id}")
+async def delete_ride(ride_id: str, _=Depends(require_roles("admin"))):
+    res = await rides_col.delete_one({"id": ride_id})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Viaje no encontrado")
+    return {"success": True, "message": "Viaje eliminado correctamente"}
+
+@api.post("/admin/users/{user_id}/wallet")
+async def adjust_user_wallet(user_id: str, body: WalletAdjustmentIn, _=Depends(require_roles("admin"))):
+    target = await users_col.find_one({"id": user_id})
+    if not target:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    adj = float(body.amount)
+    if adj == 0:
+        raise HTTPException(status_code=400, detail="El monto no puede ser cero")
+        
+    new_bal = max(0.0, float(target.get("wallet_balance", 0)) + adj)
+    await users_col.update_one({"id": user_id}, {"$set": {"wallet_balance": new_bal}})
+    
+    desc = body.description or ("Ajuste administrativo" if adj < 0 else "Recarga administrativa")
+    
+    await wallet_txns_col.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "type": "adjustment" if adj < 0 else "recharge",
+        "amount": adj,
+        "description": desc,
+        "created_at": utcnow_iso()
+    })
+    
+    return {
+        "success": True,
+        "new_balance": new_bal,
+        "message": f"Billetera ajustada con éxito en {adj:+.2f}$"
+    }
+
+@api.post("/admin/promocodes", response_model=PromoCodeOut)
+async def create_promocode(body: PromoCodeIn, _=Depends(require_roles("admin"))):
+    code_upper = body.code.strip().upper()
+    if not code_upper:
+        raise HTTPException(status_code=400, detail="Código inválido")
+    exists = await promocodes_col.find_one({"code": code_upper})
+    if exists:
+        raise HTTPException(status_code=409, detail="El código de promoción ya existe")
+    doc = {
+        "code": code_upper,
+        "discount_usd": float(body.discount_usd),
+        "recharge_amount_usd": float(body.recharge_amount_usd),
+        "active": True,
+        "created_at": utcnow_iso()
+    }
+    await promocodes_col.insert_one(doc)
+    return doc
+
+@api.get("/admin/promocodes", response_model=List[PromoCodeOut])
+async def list_promocodes(_=Depends(require_roles("admin"))):
+    cursor = promocodes_col.find({}, {"_id": 0})
+    return await cursor.to_list(length=100)
+
+@api.delete("/admin/promocodes/{code}")
+async def delete_promocode(code: str, _=Depends(require_roles("admin"))):
+    code_upper = code.strip().upper()
+    res = await promocodes_col.delete_one({"code": code_upper})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Código no encontrado")
+    return {"success": True}
+
+@api.post("/promocodes/apply")
+async def apply_promocode(body: ApplyPromoIn, user=Depends(get_current_user)):
+    code_upper = body.code.strip().upper()
+    promo = await promocodes_col.find_one({"code": code_upper, "active": True})
+    if not promo:
+        raise HTTPException(status_code=404, detail="Código inválido o inactivo")
+    
+    used_key = f"used_promo_{code_upper}"
+    if user.get(used_key):
+        raise HTTPException(status_code=400, detail="Ya has canjeado este código promocional")
+    
+    await users_col.update_one({"id": user["id"]}, {"$set": {used_key: True}})
+    
+    added_bal = float(promo.get("recharge_amount_usd", 0))
+    if added_bal > 0:
+        new_bal = float(user.get("wallet_balance", 0)) + added_bal
+        await users_col.update_one({"id": user["id"]}, {"$set": {"wallet_balance": new_bal}})
+        
+        await wallet_txns_col.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": user["id"],
+            "type": "bonus",
+            "amount": added_bal,
+            "description": f"Código Promocional {code_upper}",
+            "created_at": utcnow_iso()
+        })
+        
+    return {
+        "success": True,
+        "message": f"Código {code_upper} canjeado correctamente",
+        "added_balance": added_bal,
+        "discount_usd": float(promo.get("discount_usd", 0))
+    }
 
 # ============================================================
 # Health

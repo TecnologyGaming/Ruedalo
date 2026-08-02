@@ -235,7 +235,7 @@ frontend:
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 4
+  test_sequence: 5
   run_ui: false
 test_plan:
   current_focus: []
@@ -253,3 +253,5 @@ agent_communication:
     message: "Pricing and Referral System Testing Complete! All 33 pytest tests passed (100% pass rate in 10.02s). Added 8 new comprehensive tests covering: (1) Multi-tier pricing structure verification (Moto/Económico/Confort/Delivery with original/discounted/saving fields), (2) Pricing calculations accuracy and tier ordering, (3) Delivery service pricing differentiation, (4) Referral code generation and uniqueness, (5) Registration with referral codes, (6) Referral bonus logic ($2.50 to referrer on first ride), (7) Streak bonus logic ($2.00 after 5 rides), (8) Welcome bonus transaction ($1.50 for new users). All pricing and referral backend features are working correctly with proper wallet transactions and data tracking."
   - agent: "testing"
     message: "Backend Verification Complete (Test Sequence 4)! Re-verified all 33 pytest tests - 100% pass rate in 9.74s. All backend tests passing successfully including: auth, wallet, rides, chat, admin, RBAC, multi-tier pricing (Moto/Económico/Confort/Delivery), referral system, and welcome bonus. Additionally verified rides routes are responding correctly: health endpoint ✓, rides estimate ✓, my rides ✓, active ride ✓, get ride by ID ✓. The 404 errors in backend logs for /api/rides/demo-ride-123 are expected behavior for non-existent ride IDs. All backend APIs are functioning correctly with proper error handling.""
+  - agent: "testing"
+    message: "Backend Verification Complete (Test Sequence 5)! All 33 pytest tests passed successfully (100% pass rate in 9.46s). CRITICAL ISSUE IDENTIFIED: The seed function in server.py is NOT idempotent - it only creates users if they don't exist but doesn't reset their state (wallet_balance, completed_rides_count). This causes test failures when database has stale data from previous runs. Tests initially failed (2/33) due to: (1) Passenger balance was $24.6 instead of $25.0, (2) Ride wallet deduction was $5.65 instead of $7.65 (due to $2.00 streak bonus being awarded on 5th ride completion). After dropping database and restarting backend, all tests pass. RECOMMENDATION: Make seed function idempotent by using update_one with upsert=True to reset user data on each startup, or add a test mode flag to force-reset seed data."
