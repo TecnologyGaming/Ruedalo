@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, ScrollView } from "react-native";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, ScrollView, TextInput, ActivityIndicator } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
@@ -29,6 +29,10 @@ export function WalletScreen() {
   const [senderBank, setSenderBank] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Promo Code States
+  const [promoCodeText, setPromoCodeText] = useState("");
+  const [applyingPromo, setApplyingPromo] = useState(false);
+
   const load = useCallback(async () => {
     try {
       const [t, b, r] = await Promise.all([
@@ -44,6 +48,25 @@ export function WalletScreen() {
   }, [refresh]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  const applyPromo = async () => {
+    const code = promoCodeText.trim().toUpperCase();
+    if (!code) return toast("Ingresa un código promocional", "error");
+    setApplyingPromo(true);
+    try {
+      const res = await api<any>("/promocodes/apply", {
+        method: "POST",
+        body: { code }
+      });
+      toast(res.message || "Código canjeado con éxito", "success");
+      setPromoCodeText("");
+      await load();
+    } catch (e: any) {
+      toast(e?.message ?? "Error al canjear código", "error");
+    } finally {
+      setApplyingPromo(false);
+    }
+  };
 
   const submitRecharge = async () => {
     const amt = parseFloat(amount.replace(",", "."));
@@ -97,6 +120,34 @@ export function WalletScreen() {
           <Plus size={18} color="#fff" />
           <Text style={styles.rechargeText}>Recargar con Pago Móvil</Text>
         </TouchableOpacity>
+      </View>
+
+      {/* PROMO REDEMPTION CARD */}
+      <View style={styles.promoRedeemCard}>
+        <Text style={styles.promoRedeemLabel}>¿TIENES UN CÓDIGO PROMOCIONAL?</Text>
+        <View style={styles.promoInputRow}>
+          <TextInput
+            style={styles.promoInput}
+            placeholder="Ej: RUEDALO2026"
+            placeholderTextColor={colors.textMuted}
+            value={promoCodeText}
+            onChangeText={setPromoCodeText}
+            autoCapitalize="characters"
+            testID="wallet-promo-input"
+          />
+          <TouchableOpacity 
+            style={styles.promoApplyBtn} 
+            onPress={applyPromo} 
+            disabled={applyingPromo || !promoCodeText.trim()}
+            testID="wallet-promo-submit-btn"
+          >
+            {applyingPromo ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.promoApplyBtnTxt}>Canjear</Text>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       <Text style={styles.sectionTitle}>Movimientos</Text>
@@ -211,4 +262,23 @@ const styles = StyleSheet.create({
   bankRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: colors.border },
   bankLabel: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 12 },
   bankValue: { color: colors.textPrimary, fontFamily: fonts.mono, fontSize: 14 },
+
+  // Promo Redemption card styling
+  promoRedeemCard: {
+    marginHorizontal: spacing.md, marginBottom: 12, padding: 14, borderRadius: 16,
+    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
+    gap: 8, ...shadows.card,
+  },
+  promoRedeemLabel: { color: colors.textSecondary, fontFamily: fonts.bodyBold, fontSize: 9, letterSpacing: 1.5 },
+  promoInputRow: { flexDirection: "row", gap: 10, alignItems: "center" },
+  promoInput: {
+    flex: 1, height: 44, backgroundColor: colors.elevated, color: colors.textPrimary,
+    fontFamily: fonts.body, fontSize: 13, paddingHorizontal: 12, borderRadius: 10,
+    borderWidth: 1, borderColor: colors.border,
+  },
+  promoApplyBtn: {
+    paddingHorizontal: 16, height: 44, backgroundColor: colors.secondary,
+    borderRadius: 10, alignItems: "center", justifyContent: "center", ...shadows.btn,
+  },
+  promoApplyBtnTxt: { color: "#fff", fontFamily: fonts.bodyBold, fontSize: 13 },
 });

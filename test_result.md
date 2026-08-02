@@ -244,6 +244,8 @@ test_plan:
   test_priority: "high_first"
 agent_communication:
   - agent: "main"
+    message: "I have successfully integrated Firebase Admin SDK using the credentials provided by the user. I have also added comprehensive Admin tools: (1) delete rides/carreras in a new 'Carreras' management tab, (2) instantly adjust (recharge or deduct) user wallet balances with custom logs in the 'Usuarios' list tab, and (3) create and manage promotional codes inside the 'Config' config tab. Finally, I integrated promo code redemption in the passenger's Wallet screen so they can add balance to their wallet instantly."
+  - agent: "main"
     message: "I have successfully cropped the Ruedalo brand logo, removed its solid white background card to make it fully transparent, and adjusted its styling/dimensions in both index.tsx (Splash - 240x68 with white tint) and login.tsx (Login - 160x45 in original colors). This makes the screens >99.9% pixel-perfect and seamless with the background colors."
   - agent: "main"
     message: "I have fully implemented the visual redesign inspired by Ridery and Yango, the simulated Firebase Phone Auth with OTP SMS modal verification, Cédula and document photo registration, the interactive 6-point pre-trip verification checklist, the multi-tier ride selector (Moto, Económico, Confort) with currency conversion (USD/Bs), and the cohesive passenger/driver switcher in the profile screen. Please run the backend verification tests."
