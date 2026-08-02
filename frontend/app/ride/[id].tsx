@@ -30,13 +30,78 @@ export default function RideScreen() {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [working, setWorking] = useState(false);
+  const [demoStep, setDemoStep] = useState(0);
   const intervalRef = useRef<any>(null);
 
   const isPassenger = user?.role === "passenger";
   const isDriver = user?.role === "driver";
 
+  useEffect(() => {
+    if (id !== "demo-ride-123") return;
+    
+    // Step 0: requested (Buscando conductor...)
+    // After 6 seconds, transition to Step 1: accepted (Conductor en camino)
+    const t1 = setTimeout(() => {
+      setDemoStep(1);
+      toast("¡Conductor encontrado! Carlos M. ha aceptado tu viaje.", "success");
+    }, 6000);
+
+    // After 14 seconds, transition to Step 2: in_progress (En viaje)
+    const t2 = setTimeout(() => {
+      setDemoStep(2);
+      toast("El viaje ha iniciado. Te diriges a tu destino.", "info");
+    }, 14000);
+
+    // After 22 seconds, transition to Step 3: completed (Viaje completado)
+    const t3 = setTimeout(() => {
+      setDemoStep(3);
+      toast("¡Has llegado a tu destino! Califica tu viaje.", "success");
+    }, 22000);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [id]);
+
   const load = useCallback(async () => {
     if (!id) return;
+    
+    if (id === "demo-ride-123") {
+      const mock = {
+        id: "demo-ride-123",
+        passenger_id: user?.id || "pasajero-demo",
+        passenger_name: user?.name || "Luis Pasajero",
+        passenger_phone: user?.phone || "0414-1111111",
+        driver_id: demoStep >= 1 ? "driver-demo" : null,
+        driver_name: demoStep >= 1 ? "Carlos M." : null,
+        driver_phone: demoStep >= 1 ? "0414-2233445" : null,
+        driver_lat: demoStep >= 1 ? 10.5012 : null,
+        driver_lng: demoStep >= 1 ? -66.8533 : null,
+        origin_lat: 10.4998,
+        origin_lng: -66.8517,
+        origin_address: "Plaza Altamira, Caracas",
+        dest_lat: 10.4806,
+        dest_lng: -66.9036,
+        dest_address: "Plaza Bolívar, Caracas",
+        price_usd: 4.50,
+        distance_km: 6.2,
+        duration_min: 15,
+        status: demoStep >= 3 ? "completed" : demoStep >= 2 ? "in_progress" : "requested",
+        created_at: "2026-08-02T00:00:00Z",
+        accepted_at: demoStep >= 1 ? "2026-08-02T00:01:00Z" : null,
+        completed_at: demoStep >= 3 ? "2026-08-02T00:16:00Z" : null,
+        rated: false,
+        rating: null
+      };
+      setRide(mock);
+      if (mock.status === "completed" && isPassenger && !mock.rated) {
+        setRateOpen(true);
+      }
+      return;
+    }
+
     try {
       const r = await api<any>(`/rides/${id}`);
       setRide(r);
@@ -44,7 +109,7 @@ export default function RideScreen() {
         setRateOpen(true);
       }
     } catch {}
-  }, [id, isPassenger]);
+  }, [id, isPassenger, user, demoStep]);
 
   useEffect(() => {
     load();

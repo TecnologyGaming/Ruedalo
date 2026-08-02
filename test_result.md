@@ -235,7 +235,7 @@ frontend:
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 3
+  test_sequence: 4
   run_ui: false
 test_plan:
   current_focus: []
@@ -251,3 +251,5 @@ agent_communication:
     message: "Backend testing complete! All 25 pytest tests passed successfully (100% pass rate). Verified functionality includes: Health check, seed data, auth (register/login/me), wallet operations (bank config, recharge, history), RBAC enforcement, drivers nearby, ride estimation, full ride flow (request/accept/start/complete), chat messages, rating system, admin recharge approval/rejection, admin stats, and admin bank config updates. All backend APIs are working correctly with proper error handling and wallet transactions."
   - agent: "testing"
     message: "Pricing and Referral System Testing Complete! All 33 pytest tests passed (100% pass rate in 10.02s). Added 8 new comprehensive tests covering: (1) Multi-tier pricing structure verification (Moto/Económico/Confort/Delivery with original/discounted/saving fields), (2) Pricing calculations accuracy and tier ordering, (3) Delivery service pricing differentiation, (4) Referral code generation and uniqueness, (5) Registration with referral codes, (6) Referral bonus logic ($2.50 to referrer on first ride), (7) Streak bonus logic ($2.00 after 5 rides), (8) Welcome bonus transaction ($1.50 for new users). All pricing and referral backend features are working correctly with proper wallet transactions and data tracking."
+  - agent: "testing"
+    message: "Backend Verification Complete (Test Sequence 4)! Re-verified all 33 pytest tests - 100% pass rate in 9.74s. All backend tests passing successfully including: auth, wallet, rides, chat, admin, RBAC, multi-tier pricing (Moto/Económico/Confort/Delivery), referral system, and welcome bonus. Additionally verified rides routes are responding correctly: health endpoint ✓, rides estimate ✓, my rides ✓, active ride ✓, get ride by ID ✓. The 404 errors in backend logs for /api/rides/demo-ride-123 are expected behavior for non-existent ride IDs. All backend APIs are functioning correctly with proper error handling.""

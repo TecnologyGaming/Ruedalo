@@ -393,8 +393,8 @@ const styles = StyleSheet.create({
   },
   
   logoImage: {
-    width: 160,
-    height: 45,
+    width: 220,
+    height: 62,
   },
   
   logoBrandTextBlock: {

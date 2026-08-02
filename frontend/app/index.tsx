@@ -193,8 +193,8 @@ const styles = StyleSheet.create({
   },
   
   logoImageSplash: {
-    width: 240,
-    height: 68,
+    width: 320,
+    height: 90,
     tintColor: '#FFFFFF',
   },
 

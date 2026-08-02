@@ -5,6 +5,7 @@ export const colors = {
   primary: "#0066FF",       // Azul Ruedalo OFICIAL del isotipo
   primaryDim: "#0B132B",    // Azul medianoche (texto "Ruedalo")
   primarySlogan: "#2E62FF", // Azul del slogan "Muévete contigo"
+  secondary: "#2E62FF",     // Color secundario
   success: "#10B981",       // Energetic Emerald Green
   successDim: "#059669",
   warning: "#F59E0B",
