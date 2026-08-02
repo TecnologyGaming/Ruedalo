@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, ActivityIndicator, StatusBar, Image } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, ActivityIndicator, StatusBar, Image, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
@@ -9,6 +9,10 @@ import { colors, fonts, radii, spacing, shadows } from "@/src/lib/theme";
 import { toast } from "@/src/components/Toast";
 import { Phone, Shield, ArrowRight, X, User, ChevronRight, Check } from "lucide-react-native";
 import { RuedaloArrowLogo, SteeringWheelIcon, GoogleLogo, AppleLogo, FacebookLogo, BriefcaseIcon } from "@/src/components/RuedaloIcons";
+
+// Import Firebase real phone auth modules
+import { auth } from "@/src/lib/firebase";
+import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 
 /**
  * 02. BIENVENIDO / LOGIN SCREEN
@@ -28,8 +32,9 @@ export default function LoginScreen() {
   const [otpModal, setOtpModal] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [sentOtp, setSentOtp] = useState("");
+  const [confirmationResult, setConfirmationResult] = useState<any>(null);
 
-  const onSendOtp = () => {
+  const onSendOtp = async () => {
     if (!phone.trim() || phone.length < 7) {
       toast("Ingresa un número de teléfono válido", "error");
       return;
@@ -45,9 +50,45 @@ export default function LoginScreen() {
       targetPassword = "Admin1234!";
     }
     
+    setLoading(true);
+
+    if (Platform.OS === 'web') {
+      try {
+        let cleanPhone = phone.replace(/[-\s]/g, "");
+        if (cleanPhone.startsWith("0")) {
+          cleanPhone = cleanPhone.substring(1);
+        }
+        const formattedPhone = `+58${cleanPhone}`;
+        
+        let recaptcha = (window as any).recaptchaVerifier;
+        if (!recaptcha) {
+          let el = document.getElementById("recaptcha-container");
+          if (!el) {
+            el = document.createElement("div");
+            el.id = "recaptcha-container";
+            document.body.appendChild(el);
+          }
+          recaptcha = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            size: 'invisible'
+          });
+          (window as any).recaptchaVerifier = recaptcha;
+        }
+
+        console.log("Enviando SMS real a:", formattedPhone);
+        const confirmResult = await signInWithPhoneNumber(auth, formattedPhone, recaptcha);
+        setConfirmationResult(confirmResult);
+        setLoading(false);
+        setOtpModal(true);
+        toast("Código enviado por SMS real a tu teléfono", "success");
+        return;
+      } catch (e: any) {
+        console.error("Firebase Auth Web Error:", e);
+        toast(`Error al enviar SMS real: ${e?.message}. Usando simulación de respaldo...`, "warning", { duration: 6000 });
+      }
+    }
+
     const mockCode = Math.floor(100000 + Math.random() * 900000).toString();
     setSentOtp(mockCode);
-    setLoading(true);
     
     setTimeout(() => {
       setLoading(false);
@@ -57,6 +98,40 @@ export default function LoginScreen() {
   };
 
   const onVerifyOtp = async () => {
+    if (Platform.OS === 'web' && confirmationResult) {
+      try {
+        setLoading(true);
+        setOtpModal(false);
+        
+        console.log("Verificando código real:", otpCode);
+        const userCredential = await confirmationResult.confirm(otpCode);
+        console.log("Firebase verificado exitosamente:", userCredential.user);
+        
+        let targetEmail = "pasajero@rideve.com";
+        let targetPassword = "Demo1234!";
+        
+        if (phone.includes("2222222") || activeTab === "driver") {
+          targetEmail = "conductor@rideve.com";
+        } else if (phone.includes("0000000") || phone.includes("admin")) {
+          targetEmail = "admin@rideve.com";
+          targetPassword = "Admin1234!";
+        }
+        
+        const u = await login(targetEmail, targetPassword);
+        toast(`¡Verificado! Bienvenido a Ruedalo, ${u.name}`, "success");
+        
+        if (u.role === "passenger") router.replace("/(passenger)");
+        else if (u.role === "driver") router.replace("/(driver)");
+        else router.replace("/(admin)");
+        return;
+      } catch (e: any) {
+        toast(`Código incorrecto o error: ${e?.message}`, "error");
+        setLoading(false);
+        setOtpModal(true);
+        return;
+      }
+    }
+
     if (otpCode !== sentOtp && otpCode !== "123456") {
       toast("Código de verificación incorrecto", "error");
       return;
