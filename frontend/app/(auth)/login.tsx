@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, ActivityIndicator, StatusBar } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, ActivityIndicator, StatusBar, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
@@ -114,13 +114,13 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Logo Header - Exact positioning from mockup */}
+          {/* Logo Header - Imagen completa del logo oficial */}
           <View style={styles.logoHeader}>
-            <RuedaloArrowLogo size={50} color={colors.primary} />
-            <View style={styles.logoBrandTextBlock}>
-              <Text style={styles.logoBrandTitle}>Ruedalo</Text>
-              <Text style={styles.logoBrandSubtitle}>Muévete contigo.</Text>
-            </View>
+            <Image 
+              source={require('@/assets/images/ruedalo-logo-complete.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
           </View>
 
           {/* Welcome Section - Exact from mockup */}
@@ -387,11 +387,14 @@ const styles = StyleSheet.create({
 
   // Logo Header - Exact from mockup: 50px from top
   logoHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
     marginTop: 50,
     marginBottom: 30,
+    alignItems: 'flex-start',
+  },
+  
+  logoImage: {
+    width: 200,
+    height: 60,
   },
   
   logoBrandTextBlock: {

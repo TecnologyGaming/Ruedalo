@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { View, StyleSheet, Text, StatusBar } from "react-native";
+import { View, StyleSheet, Text, StatusBar, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/src/lib/auth";
@@ -64,11 +64,11 @@ export default function SplashScreen() {
 
         {/* Centered Logo + Brand Text */}
         <View style={styles.brandContainer}>
-          <View style={styles.logoWrapper}>
-            <RuedaloArrowLogo size={140} color="#FFFFFF" />
-          </View>
-          <Text style={styles.brandName}>Ruedalo</Text>
-          <Text style={styles.brandTagline}>Muévete contigo.</Text>
+          <Image 
+            source={require('@/assets/images/ruedalo-logo-complete.png')}
+            style={styles.logoImageSplash}
+            resizeMode="contain"
+          />
         </View>
 
         {/* Bottom Indicator Bar (White bar from mockup) */}
@@ -190,26 +190,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     zIndex: 10,
-    gap: 10,
   },
   
-  logoWrapper: {
-    marginBottom: 10,
-  },
-  
-  brandName: {
-    color: "#FFFFFF",
-    fontFamily: fonts.headingBold,
-    fontSize: 48,
-    letterSpacing: -1.5,
-  },
-  
-  brandTagline: {
-    color: "#FFFFFF",
-    fontFamily: fonts.body,
-    fontSize: 18,
-    letterSpacing: 0.5,
-    opacity: 0.9,
+  logoImageSplash: {
+    width: 300,
+    height: 120,
+    tintColor: '#FFFFFF',
   },
 
   // Bottom Indicator Bar (Exact 12px from mockup)
