@@ -47,6 +47,7 @@ messages_col = db["messages"]
 config_col = db["config"]
 ratings_col = db["ratings"]
 promocodes_col = db["promocodes"]
+notifications_col = db["notifications"]
 
 app = FastAPI(title="RideVE API")
 api = APIRouter(prefix="/api")
@@ -240,6 +241,12 @@ class WalletAdjustmentIn(BaseModel):
     amount: float
     description: Optional[str] = None
 
+class PushNotificationIn(BaseModel):
+    title: str
+    body: str
+    target: Literal["all", "drivers", "passengers", "individual"] = "all"
+    user_id: Optional[str] = None
+
 # ============================================================
 # Helpers
 # ============================================================
@@ -375,6 +382,7 @@ async def seed_initial_data():
     await recharges_col.create_index("id", unique=True)
     await messages_col.create_index([("ride_id", 1), ("created_at", 1)])
     await promocodes_col.create_index("code", unique=True)
+    await notifications_col.create_index("id", unique=True)
 
     # Admin
     if not await users_col.find_one({"email": ADMIN_EMAIL}):
@@ -418,7 +426,7 @@ async def seed_initial_data():
             "password_hash": hash_password("Demo1234!"),
             "role": "driver",
             "wallet_balance": 0.0,
-            "is_online": True,
+            "is_online": False,
             "lat": CARACAS_CENTER[0],
             "lng": CARACAS_CENTER[1],
             "rating_avg": 4.9,
@@ -437,12 +445,15 @@ async def seed_initial_data():
                 "password_hash": hash_password("Demo1234!"),
                 "role": "driver",
                 "wallet_balance": 0.0,
-                "is_online": True,
+                "is_online": False,
                 "lat": d["lat"],
                 "lng": d["lng"],
                 "rating_avg": round(4.5 + (hash(d["email"]) % 50) / 100.0, 2),
                 "created_at": utcnow_iso(),
             })
+
+    # Forzar a todos los conductores de prueba a estar desconectados al iniciar
+    await users_col.update_many({"role": "driver"}, {"$set": {"is_online": False}})
 
     # Bank config
     if not await config_col.find_one({"_id": "bank"}):
@@ -1190,6 +1201,38 @@ async def admin_toggle_user_active(user_id: str, _=Depends(require_roles("admin"
     
     await users_col.update_one({"id": user_id}, {"$set": {"is_active": new_state}})
     return {"success": True, "is_active": new_state}
+
+@api.post("/admin/push")
+async def admin_send_push_notification(body: PushNotificationIn, _=Depends(require_roles("admin"))):
+    doc = {
+        "id": str(uuid.uuid4()),
+        "title": body.title.strip(),
+        "body": body.body.strip(),
+        "target": body.target,
+        "user_id": body.user_id,
+        "created_at": utcnow_iso()
+    }
+    await notifications_col.insert_one(doc)
+    return {"success": True, "message": "Notificación enviada con éxito"}
+
+@api.get("/notifications")
+async def get_user_notifications(user=Depends(get_current_user)):
+    # Fetch notifications that match:
+    # 1. Target is "all"
+    # 2. Target is "passengers" and user is a passenger
+    # 3. Target is "drivers" and user is a driver
+    # 4. Target is "individual" and user_id is this user's ID
+    role_target = "passengers" if user["role"] == "passenger" else "drivers"
+    query = {
+        "$or": [
+            {"target": "all"},
+            {"target": role_target},
+            {"target": "individual", "user_id": user["id"]}
+        ]
+    }
+    cursor = notifications_col.find(query, {"_id": 0}).sort("created_at", -1)
+    items = await cursor.to_list(length=100)
+    return items
 
 # ============================================================
 # Health

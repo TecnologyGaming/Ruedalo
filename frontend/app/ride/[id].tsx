@@ -11,6 +11,7 @@ import { colors, fonts, radii, spacing, shadows } from "@/src/lib/theme";
 import { RideMap, MarkerData } from "@/src/components/RideMap";
 import { NeonButton } from "@/src/components/NeonButton";
 import { toast } from "@/src/components/Toast";
+import { playSound } from "@/src/utils/sound";
 
 const STATUS_LABEL: Record<string, string> = {
   requested: "Buscando conductor...",
@@ -40,9 +41,12 @@ export default function RideScreen() {
     if (id !== "demo-ride-123") return;
     
     // Step 0: requested (Buscando conductor...)
+    playSound("request");
+
     // After 6 seconds, transition to Step 1: accepted (Conductor en camino)
     const t1 = setTimeout(() => {
       setDemoStep(1);
+      playSound("accepted");
       toast("¡Conductor encontrado! Carlos M. ha aceptado tu viaje.", "success");
     }, 6000);
 
@@ -55,6 +59,7 @@ export default function RideScreen() {
     // After 22 seconds, transition to Step 3: completed (Viaje completado)
     const t3 = setTimeout(() => {
       setDemoStep(3);
+      playSound("completed");
       toast("¡Has llegado a tu destino! Califica tu viaje.", "success");
     }, 22000);
 
@@ -92,7 +97,7 @@ export default function RideScreen() {
         created_at: "2026-08-02T00:00:00Z",
         accepted_at: demoStep >= 1 ? "2026-08-02T00:01:00Z" : null,
         completed_at: demoStep >= 3 ? "2026-08-02T00:16:00Z" : null,
-        rated: false,
+        rated: demoStep >= 4,
         rating: null
       };
       setRide(mock);
@@ -144,7 +149,11 @@ export default function RideScreen() {
   const submitRating = async () => {
     setWorking(true);
     try {
-      await api("/rides/rate", { method: "POST", body: { ride_id: id, rating, comment } });
+      if (id === "demo-ride-123") {
+        setDemoStep(4);
+      } else {
+        await api("/rides/rate", { method: "POST", body: { ride_id: id, rating, comment } });
+      }
       toast("¡Gracias por tu calificación!", "success");
       setRateOpen(false);
       router.back();

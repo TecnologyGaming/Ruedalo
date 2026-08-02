@@ -1,9 +1,9 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Modal, TextInput } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Modal, TextInput, FlatList } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Location from "expo-location";
-import { MapPin, Navigation, Search, Star, Wallet as WalletIcon, X, Shield, ShieldCheck, Heart, Info, ChevronRight, User, Phone, Check, CreditCard, MessageSquare, Bike, Car, Sparkles, Package, Home, Briefcase, Clock, AlertTriangle, HelpCircle } from "lucide-react-native";
+import { MapPin, Navigation, Search, Star, Wallet as WalletIcon, X, Shield, ShieldCheck, Heart, Info, ChevronRight, User, Phone, Check, CreditCard, MessageSquare, Bike, Car, Sparkles, Package, Home, Briefcase, Clock, AlertTriangle, HelpCircle, Bell } from "lucide-react-native";
 
 import { useAuth } from "@/src/lib/auth";
 import { colors, fonts, radii, spacing, shadows } from "@/src/lib/theme";
@@ -57,6 +57,18 @@ export default function PassengerHome() {
   const [safetyRead, setSafetyRead] = useState(false);
   const [activeTabSafety, setActiveTabSafety] = useState(false);
 
+  // Notification / Bell States
+  const [bellOpen, setBellOpen] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+
+  const loadNotifications = useCallback(async () => {
+    try {
+      const n = await api<any[]>("/notifications");
+      setNotifications(n);
+    } catch {}
+  }, []);
+
   useEffect(() => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -79,8 +91,9 @@ export default function PassengerHome() {
 
   useFocusEffect(useCallback(() => {
     loadDrivers(myLoc.lat, myLoc.lng);
+    loadNotifications();
     if (refresh) refresh();
-  }, [myLoc, loadDrivers, refresh]));
+  }, [myLoc, loadDrivers, loadNotifications, refresh]));
 
   const pickDestination = (d: { name: string; address: string; lat: number; lng: number }) => {
     setDestination(d);
@@ -178,12 +191,49 @@ export default function PassengerHome() {
             <View style={styles.avatar}><Text style={styles.avatarTxt}>{user?.name?.[0] ?? "P"}</Text></View>
             <Text style={styles.userName} numberOfLines={1}>Hola, {user?.name?.split(" ")[0] ?? "Pasajero"}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.balancePill} onPress={() => router.push("/(passenger)/wallet")} testID="passenger-wallet-pill">
-            <WalletIcon size={14} color="#fff" />
-            <Text style={styles.balanceTxt}>${(user?.wallet_balance ?? 0).toFixed(2)}</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+            <TouchableOpacity style={styles.balancePill} onPress={() => router.push("/(passenger)/wallet")} testID="passenger-wallet-pill">
+              <WalletIcon size={14} color="#fff" />
+              <Text style={styles.balanceTxt}>${(user?.wallet_balance ?? 0).toFixed(2)}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.bellBtn} onPress={() => setBellOpen(true)} testID="bell-notifications-btn">
+              <Bell size={18} color={colors.textPrimary} />
+              {notifications.length > 0 && <View style={styles.bellBadge} />}
+            </TouchableOpacity>
+          </View>
         </View>
       </SafeAreaView>
+
+      {/* Bell / Notifications Modal */}
+      <Modal visible={bellOpen} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setBellOpen(false)}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={["top", "bottom"]}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Notificaciones</Text>
+            <TouchableOpacity onPress={() => setBellOpen(false)} testID="close-bell-btn">
+              <X size={26} color={colors.textPrimary} />
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={notifications}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ padding: spacing.md, gap: 10 }}
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>No tienes notificaciones recibidas.</Text>
+            }
+            renderItem={({ item }) => (
+              <View style={styles.notificationCard}>
+                <View style={styles.notificationCardHeader}>
+                  <Text style={styles.notificationTitle}>{item.title}</Text>
+                  <Text style={styles.notificationDate}>
+                    {new Date(item.created_at).toLocaleDateString("es-VE")}
+                  </Text>
+                </View>
+                <Text style={styles.notificationBody}>{item.body}</Text>
+              </View>
+            )}
+          />
+        </SafeAreaView>
+      </Modal>
 
       <View style={styles.bottomSheet} pointerEvents="box-none">
         <View style={styles.handle} />
@@ -817,6 +867,18 @@ const styles = StyleSheet.create({
   userName: { color: colors.textPrimary, fontFamily: fonts.bodyBold, fontSize: 13, flexShrink: 1 },
   balancePill: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.success, borderRadius: radii.full, paddingVertical: 8, paddingHorizontal: 14, borderWidth: 1, borderColor: colors.success, ...shadows.neonSecondary },
   balanceTxt: { color: "#fff", fontFamily: fonts.bodyBold, fontSize: 14 },
+  
+  // Bell / Notification styles
+  bellBtn: { width: 38, height: 38, borderRadius: 999, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border, position: "relative", ...shadows.card },
+  bellBadge: { position: "absolute", top: 8, right: 8, width: 8, height: 8, borderRadius: 999, backgroundColor: colors.danger },
+  modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border, backgroundColor: colors.surface },
+  modalTitle: { color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 22 },
+  emptyText: { color: colors.textMuted, textAlign: "center", marginTop: 40, fontFamily: fonts.body, fontSize: 13 },
+  notificationCard: { backgroundColor: colors.surface, borderRadius: radii.md, padding: 14, borderWidth: 1, borderColor: colors.border, gap: 4, marginHorizontal: spacing.md, marginTop: 10, ...shadows.card },
+  notificationCardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 2 },
+  notificationTitle: { color: colors.textPrimary, fontFamily: fonts.bodyBold, fontSize: 14, flex: 1, marginRight: 8 },
+  notificationDate: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 10 },
+  notificationBody: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 12, lineHeight: 18 },
 
   bottomSheet: {
     position: "absolute",
