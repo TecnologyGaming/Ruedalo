@@ -452,8 +452,18 @@ async def seed_initial_data():
                 "created_at": utcnow_iso(),
             })
 
-    # Forzar a todos los conductores de prueba a estar desconectados al iniciar
-    await users_col.update_many({"role": "driver"}, {"$set": {"is_online": False}})
+    # Seeding simulated bots config
+    bots_config = await config_col.find_one({"_id": "bots"})
+    if not bots_config:
+        bots_config = {"_id": "bots", "enabled": True}
+        await config_col.insert_one(bots_config)
+    
+    bots_enabled = bots_config.get("enabled", True)
+    # Set simulated driver online states
+    await users_col.update_many(
+        {"email": {"$in": [d["email"] for d in SEED_DRIVERS] + ["conductor@rideve.com"]}},
+        {"$set": {"is_online": bots_enabled}}
+    )
 
     # Bank config
     if not await config_col.find_one({"_id": "bank"}):
@@ -1233,6 +1243,26 @@ async def get_user_notifications(user=Depends(get_current_user)):
     cursor = notifications_col.find(query, {"_id": 0}).sort("created_at", -1)
     items = await cursor.to_list(length=100)
     return items
+
+@api.get("/admin/bots-status")
+async def admin_bots_status(_=Depends(require_roles("admin"))):
+    config = await config_col.find_one({"_id": "bots"})
+    enabled = config.get("enabled", True) if config else True
+    return {"bots_enabled": enabled}
+
+@api.post("/admin/toggle-bots")
+async def admin_toggle_bots(_=Depends(require_roles("admin"))):
+    config = await config_col.find_one({"_id": "bots"})
+    current = config.get("enabled", True) if config else True
+    new_state = not current
+    await config_col.update_one({"_id": "bots"}, {"$set": {"enabled": new_state}}, upsert=True)
+    
+    # Update simulated driver online states
+    await users_col.update_many(
+        {"email": {"$in": [d["email"] for d in SEED_DRIVERS] + ["conductor@rideve.com"]}},
+        {"$set": {"is_online": new_state}}
+    )
+    return {"success": True, "bots_enabled": new_state}
 
 # ============================================================
 # Health

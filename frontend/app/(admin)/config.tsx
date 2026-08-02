@@ -33,18 +33,33 @@ export default function AdminConfig() {
   const [pushUserId, setPushUserId] = useState("");
   const [sendingPush, setSendingPush] = useState(false);
 
+  // Bots config state
+  const [botsEnabled, setBotsEnabled] = useState(true);
+
   const load = useCallback(async () => {
     try {
-      const [b, p] = await Promise.all([
+      const [b, p, s] = await Promise.all([
         api<any>("/wallet/bank-config"),
         api<any[]>("/admin/promocodes"),
+        api<any>("/admin/bots-status"),
       ]);
       setBankName(b.bank_name); setCedula(b.cedula); setPhone(b.phone);
       setHolder(b.holder_name); setRate(String(b.usd_to_bs_rate));
       setPromos(p);
+      setBotsEnabled(s.bots_enabled);
     } catch {}
   }, []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  const toggleBots = async () => {
+    try {
+      const res = await api<any>("/admin/toggle-bots", { method: "POST" });
+      setBotsEnabled(res.bots_enabled);
+      toast(res.bots_enabled ? "Simuladores de conductores ACTIVADOS" : "Simuladores de conductores DESACTIVADOS", "success");
+    } catch (e: any) {
+      toast(e?.message ?? "Error", "error");
+    }
+  };
 
   const sendPush = async () => {
     if (!pushTitle.trim() || !pushBody.trim()) {
@@ -123,6 +138,24 @@ export default function AdminConfig() {
       <KeyboardAwareScrollView contentContainerStyle={styles.scroll} bottomOffset={20} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Configuración</Text>
         <Text style={styles.sub}>Datos de Pago Móvil que verán los usuarios</Text>
+
+        {/* BOTS CONFIGURATION CARD */}
+        <View style={[styles.promoForm, { marginTop: 14 }]}>
+          <Text style={styles.botTitle}>Modo de Pruebas (Bots)</Text>
+          <Text style={styles.botDesc}>
+            Desactiva los conductores simulados (bots) de Caracas si deseas realizar pruebas exclusivas entre tus propios dispositivos reales.
+          </Text>
+          <TouchableOpacity 
+            style={[styles.botBtn, botsEnabled ? styles.botBtnOn : styles.botBtnOff]} 
+            onPress={toggleBots}
+            testID="toggle-bots-btn"
+          >
+            <Text style={styles.botBtnTxt}>
+              {botsEnabled ? "● Simuladores Conectados (Desactivar)" : "○ Simuladores Apagados (Activar)"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={{ gap: 12, marginTop: 16 }}>
           <FieldInput label="Banco receptor" value={bankName} onChangeText={setBankName} placeholder="Banco de Venezuela" testID="config-bank-input" />
           <FieldInput label="Cédula del titular" value={cedula} onChangeText={setCedula} placeholder="V-12345678" testID="config-cedula-input" />
@@ -229,4 +262,12 @@ const styles = StyleSheet.create({
   targetChipActive: { borderColor: colors.primary, backgroundColor: colors.secondary },
   targetChipTxt: { color: colors.textSecondary, fontFamily: fonts.bodyMedium, fontSize: 11 },
   targetChipTxtActive: { color: "#fff", fontFamily: fonts.bodyBold },
+  
+  // Bot testing styles
+  botTitle: { color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 14 },
+  botDesc: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 11, lineHeight: 16 },
+  botBtn: { height: 42, borderRadius: radii.md, alignItems: "center", justifyContent: "center", marginTop: 4, borderWidth: 1 },
+  botBtnOn: { backgroundColor: "#ECFDF5", borderColor: colors.success || "#10B981" },
+  botBtnOff: { backgroundColor: "#FEF2F2", borderColor: colors.danger },
+  botBtnTxt: { fontFamily: fonts.bodyBold, fontSize: 12, color: colors.textPrimary },
 });
