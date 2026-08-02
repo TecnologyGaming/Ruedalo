@@ -65,7 +65,7 @@ export default function SplashScreen() {
         {/* Centered Logo + Brand Text */}
         <View style={styles.brandContainer}>
           <Image 
-            source={require('@/assets/images/ruedalo-logo-complete.png')}
+            source={require('@/assets/images/ruedalo-logo-clean.png')}
             style={styles.logoImageSplash}
             resizeMode="contain"
           />
@@ -193,8 +193,8 @@ const styles = StyleSheet.create({
   },
   
   logoImageSplash: {
-    width: 300,
-    height: 120,
+    width: 240,
+    height: 68,
     tintColor: '#FFFFFF',
   },
 

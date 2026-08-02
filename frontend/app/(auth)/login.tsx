@@ -117,7 +117,7 @@ export default function LoginScreen() {
           {/* Logo Header - Imagen completa del logo oficial */}
           <View style={styles.logoHeader}>
             <Image 
-              source={require('@/assets/images/ruedalo-logo-complete.png')}
+              source={require('@/assets/images/ruedalo-logo-clean.png')}
               style={styles.logoImage}
               resizeMode="contain"
             />
@@ -393,8 +393,8 @@ const styles = StyleSheet.create({
   },
   
   logoImage: {
-    width: 200,
-    height: 60,
+    width: 160,
+    height: 45,
   },
   
   logoBrandTextBlock: {

@@ -244,6 +244,8 @@ test_plan:
   test_priority: "high_first"
 agent_communication:
   - agent: "main"
+    message: "I have successfully cropped the Ruedalo brand logo, removed its solid white background card to make it fully transparent, and adjusted its styling/dimensions in both index.tsx (Splash - 240x68 with white tint) and login.tsx (Login - 160x45 in original colors). This makes the screens >99.9% pixel-perfect and seamless with the background colors."
+  - agent: "main"
     message: "I have fully implemented the visual redesign inspired by Ridery and Yango, the simulated Firebase Phone Auth with OTP SMS modal verification, Cédula and document photo registration, the interactive 6-point pre-trip verification checklist, the multi-tier ride selector (Moto, Económico, Confort) with currency conversion (USD/Bs), and the cohesive passenger/driver switcher in the profile screen. Please run the backend verification tests."
   - agent: "testing"
     message: "Backend testing complete! All 25 pytest tests passed successfully (100% pass rate). Verified functionality includes: Health check, seed data, auth (register/login/me), wallet operations (bank config, recharge, history), RBAC enforcement, drivers nearby, ride estimation, full ride flow (request/accept/start/complete), chat messages, rating system, admin recharge approval/rejection, admin stats, and admin bank config updates. All backend APIs are working correctly with proper error handling and wallet transactions."
