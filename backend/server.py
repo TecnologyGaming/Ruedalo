@@ -400,16 +400,10 @@ async def seed_initial_data():
         })
         logger.info("Seeded admin")
 
-    # Seed DONATEX owner account
-    donatex_user = await users_col.find_one({"email": "donatex@ruedalo.app"})
-    if donatex_user:
-        await users_col.update_one(
-            {"email": "donatex@ruedalo.app"},
-            {"$set": {"password_hash": hash_password("Venezuela257#"), "role": "admin"}}
-        )
-    else:
-        await users_col.insert_one({
-            "id": "donatex-admin-id",
+    # Seed DONATEX owner account - using an idempotent upsert on "id"
+    await users_col.update_one(
+        {"id": "donatex-admin-id"},
+        {"$set": {
             "email": "donatex@ruedalo.app",
             "name": "DONATEX",
             "phone": "0414-9999999",
@@ -418,9 +412,12 @@ async def seed_initial_data():
             "wallet_balance": 0.0,
             "is_online": False,
             "rating_avg": 5.0,
-            "created_at": utcnow_iso(),
-        })
-        logger.info("Seeded DONATEX owner admin account")
+        }, "$setOnInsert": {
+            "created_at": utcnow_iso()
+        }},
+        upsert=True
+    )
+    logger.info("Seeded DONATEX owner admin account")
 
     # Demo passenger
     if not await users_col.find_one({"email": "pasajero@rideve.com"}):
