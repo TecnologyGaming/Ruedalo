@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "RideVE",
+    "name": "Ruedalo",
     "slug": "rideve",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "rideve",
+    "scheme": "ruedalo",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.rideve.app",
+      "bundleIdentifier": "com.ruedalo.app",
       "config": {
         "googleMapsApiKey": "AIzaSyBzsybeLDdXmxiF4jYbt3zYa5N8x1xtKKQ"
       },
@@ -20,7 +20,7 @@
       }
     },
     "android": {
-      "package": "com.rideve.app",
+      "package": "com.ruedalo.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0B0C10"
@@ -47,7 +47,7 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Permite a RideVE acceder a tu ubicación."
+          "locationAlwaysAndWhenInUsePermission": "Permite a Ruedalo acceder a tu ubicación."
         }
       ],
       [

@@ -1,5 +1,5 @@
 """
-RideVE - Backend (FastAPI + MongoDB)
+Ruedalo - Backend (FastAPI + MongoDB)
 Ride-hailing app for Venezuela with JWT auth, wallet, Pago Movil recharges.
 """
 
@@ -49,7 +49,7 @@ ratings_col = db["ratings"]
 promocodes_col = db["promocodes"]
 notifications_col = db["notifications"]
 
-app = FastAPI(title="RideVE API")
+app = FastAPI(title="Ruedalo API")
 api = APIRouter(prefix="/api")
 
 app.add_middleware(
@@ -491,7 +491,7 @@ async def seed_initial_data():
             "bank_name": "Banco de Venezuela",
             "cedula": "V-12345678",
             "phone": "0414-1234567",
-            "holder_name": "RideVE C.A.",
+            "holder_name": "Ruedalo C.A.",
             "usd_to_bs_rate": 38.5,
         })
         logger.info("Seeded bank config")
@@ -1292,7 +1292,7 @@ async def admin_toggle_bots(_=Depends(require_roles("admin"))):
 
 @api.get("/")
 async def root():
-    return {"app": "RideVE", "status": "ok"}
+    return {"app": "Ruedalo", "status": "ok"}
 
 from fastapi.staticfiles import StaticFiles
 

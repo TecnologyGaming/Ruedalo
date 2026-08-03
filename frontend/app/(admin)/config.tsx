@@ -160,7 +160,7 @@ export default function AdminConfig() {
           <FieldInput label="Banco receptor" value={bankName} onChangeText={setBankName} placeholder="Banco de Venezuela" testID="config-bank-input" />
           <FieldInput label="Cédula del titular" value={cedula} onChangeText={setCedula} placeholder="V-12345678" testID="config-cedula-input" />
           <FieldInput label="Teléfono asociado" value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholder="0414-1234567" testID="config-phone-input" />
-          <FieldInput label="Nombre del titular" value={holder} onChangeText={setHolder} placeholder="RideVE C.A." testID="config-holder-input" />
+          <FieldInput label="Nombre del titular" value={holder} onChangeText={setHolder} placeholder="Ruedalo C.A." testID="config-holder-input" />
           <FieldInput label="Tasa BCV (Bs por USD)" value={rate} onChangeText={setRate} keyboardType="decimal-pad" placeholder="38.5" testID="config-rate-input" />
           <NeonButton title="Guardar cambios" onPress={save} loading={saving} testID="config-save-btn" />
         </View>
