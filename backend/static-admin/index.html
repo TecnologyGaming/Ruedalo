@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DONATEX · Panel Administrativo Ruedalo</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            500: '#0066FF',
+                            600: '#0052CC',
+                            950: '#0b132b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom scrollbar for dark theme */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #020617;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+    </style>
+</head>
+<body class="h-full font-sans antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-view" class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
+        <div class="sm:mx-auto w-full sm:max-w-md bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-xl">
+            <div class="sm:mx-auto sm:w-full sm:max-w-sm text-center">
+                <!-- Logo -->
+                <div class="flex justify-center gap-2 items-center mb-6">
+                    <div class="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/20">
+                        <i data-lucide="car" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <span class="text-2xl font-bold tracking-tight text-white">Ruedalo <span class="text-xs font-semibold bg-brand-500/20 text-brand-500 px-2 py-0.5 rounded-full ml-1">Admin</span></span>
+                </div>
+                <h2 class="text-xl font-bold tracking-tight text-white">Ingreso al Panel Administrativo</h2>
+                <p class="mt-1 text-sm text-slate-400">Acceso exclusivo para dueños y administradores</p>
+            </div>
+
+            <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-sm">
+                <form class="space-y-6" id="login-form" onsubmit="handleLogin(event)">
+                    <div>
+                        <label for="username" class="block text-sm font-medium leading-6 text-slate-300">Usuario o Correo</label>
+                        <div class="mt-2">
+                            <input id="username" name="username" type="text" required class="block w-full rounded-xl border-0 bg-slate-950 py-3 px-4 text-white shadow-sm ring-1 ring-inset ring-slate-800 placeholder:text-slate-500 focus:ring-2 focus:ring-inset focus:ring-brand-500 sm:text-sm sm:leading-6" placeholder="DONATEX">
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <label for="password" class="block text-sm font-medium leading-6 text-slate-300">Contraseña</label>
+                        </div>
+                        <div class="mt-2">
+                            <input id="password" name="password" type="password" required class="block w-full rounded-xl border-0 bg-slate-950 py-3 px-4 text-white shadow-sm ring-1 ring-inset ring-slate-800 placeholder:text-slate-500 focus:ring-2 focus:ring-inset focus:ring-brand-500 sm:text-sm sm:leading-6" placeholder="••••••••">
+                        </div>
+                    </div>
+
+                    <div id="login-error" class="hidden text-sm text-red-400 bg-red-950/20 border border-red-900/30 p-3 rounded-xl"></div>
+
+                    <div>
+                        <button type="submit" id="login-submit-btn" class="flex w-full justify-center rounded-xl bg-brand-500 px-4 py-3 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-brand-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 transition-all duration-200">
+                            Iniciar Sesión
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD -->
+    <div id="app-view" class="hidden min-h-full flex flex-col">
+        <!-- Header -->
+        <header class="bg-slate-900 border-b border-slate-800 h-16 flex items-center justify-between px-6 shrink-0">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center">
+                    <i data-lucide="car" class="w-5 h-5 text-white"></i>
+                </div>
+                <span class="text-lg font-bold text-white tracking-tight">Ruedalo <span class="text-xs bg-slate-800 border border-slate-700 text-slate-400 px-2 py-0.5 rounded ml-1">Panel</span></span>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-brand-500 font-bold text-xs" id="admin-avatar">A</div>
+                    <span class="text-sm font-medium text-slate-300 hidden sm:inline" id="admin-name">Cargando...</span>
+                </div>
+                <button onclick="handleLogout()" class="flex items-center gap-1.5 px-3 py-1.5 border border-slate-800 hover:border-slate-700 bg-slate-950/40 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-200 transition-all">
+                    <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+                    Cerrar Sesión
+                </button>
+            </div>
+        </header>
+
+        <!-- Body -->
+        <div class="flex flex-1 overflow-hidden">
+            <!-- Sidebar -->
+            <aside class="w-64 bg-slate-900 border-r border-slate-800 hidden md:flex flex-col p-4 gap-1 select-none overflow-y-auto shrink-0">
+                <button onclick="switchTab('stats')" id="tab-stats" class="tab-btn flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl text-slate-400 hover:bg-slate-950/30 hover:text-slate-200 transition-all">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i> Estadísticas
+                </button>
+                <button onclick="switchTab('users')" id="tab-users" class="tab-btn flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl text-slate-400 hover:bg-slate-950/30 hover:text-slate-200 transition-all">
+                    <i data-lucide="users" class="w-5 h-5"></i> Usuarios
+                </button>
+                <button onclick="switchTab('drivers')" id="tab-drivers" class="tab-btn flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl text-slate-400 hover:bg-slate-950/30 hover:text-slate-200 transition-all">
+                    <i data-lucide="shield-check" class="w-5 h-5"></i> Conductores
+                </button>
+                <button onclick="switchTab('rides')" id="tab-rides" class="tab-btn flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl text-slate-400 hover:bg-slate-950/30 hover:text-slate-200 transition-all">
+                    <i data-lucide="navigation" class="w-5 h-5"></i> Carreras/Viajes
+                </button>
+                <button onclick="switchTab('recharges')" id="tab-recharges" class="tab-btn flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl text-slate-400 hover:bg-slate-950/30 hover:text-slate-200 transition-all">
+                    <i data-lucide="wallet" class="w-5 h-5"></i> Recargas & Wallet
+                </button>
+                <button onclick="switchTab('promos')" id="tab-promos" class="tab-btn flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl text-slate-400 hover:bg-slate-950/30 hover:text-slate-200 transition-all">
+                    <i data-lucide="tag" class="w-5 h-5"></i> Códigos Promo
+                </button>
+                <button onclick="switchTab('config')" id="tab-config" class="tab-btn flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl text-slate-400 hover:bg-slate-950/30 hover:text-slate-200 transition-all">
+                    <i data-lucide="settings" class="w-5 h-5"></i> Config & Bots
+                </button>
+                <button onclick="switchTab('push')" id="tab-push" class="tab-btn flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl text-slate-400 hover:bg-slate-950/30 hover:text-slate-200 transition-all">
+                    <i data-lucide="bell" class="w-5 h-5"></i> Difusión Push
+                </button>
+            </aside>
+
+            <!-- Main Content Container -->
+            <main class="flex-1 bg-slate-950 p-6 overflow-y-auto">
+                <div class="max-w-6xl mx-auto space-y-6">
+
+                    <!-- VIEW: STATS -->
+                    <div id="view-stats" class="content-view hidden space-y-6">
+                        <div class="flex flex-col gap-1">
+                            <h1 class="text-2xl font-bold text-white">Estadísticas de Ruedalo</h1>
+                            <p class="text-sm text-slate-400">Resumen y estado global del sistema de transporte</p>
+                        </div>
+
+                        <!-- Stats Cards Grid -->
+                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col gap-1">
+                                <span class="text-xs font-semibold text-slate-400 uppercase tracking-widest">Pendientes de Pago</span>
+                                <span class="text-3xl font-bold text-amber-500 mt-1" id="stat-pending-recharges">0</span>
+                                <span class="text-slate-500 text-xs mt-1">Solicitudes de recargas PM</span>
+                            </div>
+                            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col gap-1">
+                                <span class="text-xs font-semibold text-slate-400 uppercase tracking-widest">Total Usuarios</span>
+                                <span class="text-3xl font-bold text-sky-500 mt-1" id="stat-total-users">0</span>
+                                <span class="text-slate-500 text-xs mt-1" id="stat-role-ratio">Pasajeros / Conductores</span>
+                            </div>
+                            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col gap-1">
+                                <span class="text-xs font-semibold text-slate-400 uppercase tracking-widest">Conductores Activos</span>
+                                <span class="text-3xl font-bold text-emerald-500 mt-1" id="stat-online-drivers">0</span>
+                                <span class="text-slate-500 text-xs mt-1">Conductores en línea (GPS)</span>
+                            </div>
+                            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col gap-1">
+                                <span class="text-xs font-semibold text-slate-400 uppercase tracking-widest">Viajes Realizados</span>
+                                <span class="text-3xl font-bold text-indigo-500 mt-1" id="stat-completed-rides">0</span>
+                                <span class="text-slate-500 text-xs mt-1" id="stat-total-rides">Total acumulado</span>
+                            </div>
+                        </div>
+
+                        <!-- Quick Action / Alert Banner -->
+                        <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 flex items-center justify-between gap-4">
+                            <div class="flex gap-3 items-center">
+                                <div class="w-10 h-10 bg-brand-500/10 rounded-xl flex items-center justify-center text-brand-500">
+                                    <i data-lucide="info" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-white">Monitoreo de Plataforma</h3>
+                                    <p class="text-xs text-slate-400">Todos los servicios backend y Firebase están corriendo con total normalidad.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VIEW: USERS -->
+                    <div id="view-users" class="content-view hidden space-y-6">
+                        <div class="flex flex-col gap-1">
+                            <h1 class="text-2xl font-bold text-white">Gestión de Usuarios</h1>
+                            <p class="text-sm text-slate-400">Administra cuentas, bloquea perfiles y ajusta billeteras</p>
+                        </div>
+
+                        <!-- Users Table Container -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-slate-800 text-sm">
+                                    <thead class="bg-slate-950 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                                        <tr>
+                                            <th class="px-6 py-4 text-left">Usuario</th>
+                                            <th class="px-6 py-4 text-left">Contacto</th>
+                                            <th class="px-6 py-4 text-left">Rol</th>
+                                            <th class="px-6 py-4 text-left">Estado</th>
+                                            <th class="px-6 py-4 text-left">Wallet</th>
+                                            <th class="px-6 py-4 text-right">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-800 text-slate-300" id="users-table-body">
+                                        <!-- Dynamic load -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VIEW: DRIVERS -->
+                    <div id="view-drivers" class="content-view hidden space-y-6">
+                        <div class="flex flex-col gap-1">
+                            <h1 class="text-2xl font-bold text-white">Aprobación de Conductores</h1>
+                            <p class="text-sm text-slate-400">Revisa y aprueba o rechaza solicitudes de nuevos conductores</p>
+                        </div>
+
+                        <!-- Pending Drivers Container -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                            <div class="p-5 border-b border-slate-800">
+                                <h2 class="font-bold text-white text-md">Solicitudes Pendientes de Revisión</h2>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-slate-800 text-sm">
+                                    <thead class="bg-slate-950 text-slate-400 text-xs font-semibold uppercase">
+                                        <tr>
+                                            <th class="px-6 py-4 text-left">Conductor</th>
+                                            <th class="px-6 py-4 text-left">Contacto</th>
+                                            <th class="px-6 py-4 text-left">Cédula</th>
+                                            <th class="px-6 py-4 text-left">Vehículo / Placa</th>
+                                            <th class="px-6 py-4 text-right">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-800 text-slate-300" id="pending-drivers-body">
+                                        <!-- Dynamic load -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VIEW: RIDES -->
+                    <div id="view-rides" class="content-view hidden space-y-6">
+                        <div class="flex flex-col gap-1">
+                            <h1 class="text-2xl font-bold text-white">Gestión de Carreras / Viajes</h1>
+                            <p class="text-sm text-slate-400">Historial completo de solicitudes de transporte y entregas</p>
+                        </div>
+
+                        <!-- Rides List -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-slate-800 text-sm">
+                                    <thead class="bg-slate-950 text-slate-400 text-xs font-semibold uppercase">
+                                        <tr>
+                                            <th class="px-6 py-4 text-left">Pasajero</th>
+                                            <th class="px-6 py-4 text-left">Ruta (Origen -> Destino)</th>
+                                            <th class="px-6 py-4 text-left">Monto</th>
+                                            <th class="px-6 py-4 text-left">Estado</th>
+                                            <th class="px-6 py-4 text-left">Conductor</th>
+                                            <th class="px-6 py-4 text-right">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-800 text-slate-300" id="rides-table-body">
+                                        <!-- Dynamic load -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VIEW: RECHARGES -->
+                    <div id="view-recharges" class="content-view hidden space-y-6">
+                        <div class="flex flex-col gap-1">
+                            <h1 class="text-2xl font-bold text-white">Aprobación de Recargas</h1>
+                            <p class="text-sm text-slate-400">Valida transacciones bancarias de Pago Móvil reportadas por usuarios</p>
+                        </div>
+
+                        <!-- Recharges List -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-slate-800 text-sm">
+                                    <thead class="bg-slate-950 text-slate-400 text-xs font-semibold uppercase">
+                                        <tr>
+                                            <th class="px-6 py-4 text-left">Usuario</th>
+                                            <th class="px-6 py-4 text-left">Referencia / Banco</th>
+                                            <th class="px-6 py-4 text-left">Teléfono</th>
+                                            <th class="px-6 py-4 text-left">Monto (USD)</th>
+                                            <th class="px-6 py-4 text-left">Estado</th>
+                                            <th class="px-6 py-4 text-right">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-800 text-slate-300" id="recharges-table-body">
+                                        <!-- Dynamic load -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VIEW: PROMOS -->
+                    <div id="view-promos" class="content-view hidden space-y-6">
+                        <div class="flex flex-col gap-1">
+                            <h1 class="text-2xl font-bold text-white">Códigos Promocionales</h1>
+                            <p class="text-sm text-slate-400">Crea o elimina cupones de descuento y recarga para tus usuarios</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <!-- Form -->
+                            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 h-fit">
+                                <h2 class="font-bold text-white text-md mb-4">Crear Nuevo Código</h2>
+                                <form id="promo-form" onsubmit="handleCreatePromo(event)" class="space-y-4">
+                                    <div>
+                                        <label for="p-code" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Código (Mayúsculas)</label>
+                                        <input id="p-code" type="text" required class="block w-full mt-1.5 rounded-xl border-0 bg-slate-950 py-2.5 px-4 text-white ring-1 ring-inset ring-slate-800 focus:ring-2 focus:ring-brand-500 text-sm uppercase" placeholder="RUEDALO2026">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label for="p-discount" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Descuento (USD)</label>
+                                            <input id="p-discount" type="number" step="0.01" required class="block w-full mt-1.5 rounded-xl border-0 bg-slate-950 py-2.5 px-4 text-white ring-1 ring-inset ring-slate-800 focus:ring-2 focus:ring-brand-500 text-sm" placeholder="1.50">
+                                        </div>
+                                        <div>
+                                            <label for="p-recharge" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Bono Wallet (USD)</label>
+                                            <input id="p-recharge" type="number" step="0.01" required class="block w-full mt-1.5 rounded-xl border-0 bg-slate-950 py-2.5 px-4 text-white ring-1 ring-inset ring-slate-800 focus:ring-2 focus:ring-brand-500 text-sm" placeholder="5.00">
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="w-full py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-sm transition-all duration-150">
+                                        Crear Código
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- List -->
+                            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 lg:col-span-2">
+                                <h2 class="font-bold text-white text-md mb-4">Cupones y Códigos Activos</h2>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full divide-y divide-slate-800 text-sm">
+                                        <thead class="bg-slate-950 text-slate-400 text-xs font-semibold uppercase">
+                                            <tr>
+                                                <th class="px-6 py-4 text-left">Código</th>
+                                                <th class="px-6 py-4 text-left">Descuento</th>
+                                                <th class="px-6 py-4 text-left">Suma Wallet</th>
+                                                <th class="px-6 py-4 text-right">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-800 text-slate-300" id="promos-table-body">
+                                            <!-- Dynamic load -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VIEW: CONFIG & BOTS -->
+                    <div id="view-config" class="content-view hidden space-y-6">
+                        <div class="flex flex-col gap-1">
+                            <h1 class="text-2xl font-bold text-white">Configuración del Sistema y Bots</h1>
+                            <p class="text-sm text-slate-400">Modifica datos de Pago Móvil receptor y controla simuladores</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Pago Móvil Form -->
+                            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                                <h2 class="font-bold text-white text-md">Datos de Pago Móvil (Receptor)</h2>
+                                <form id="bank-form" onsubmit="handleSaveBankConfig(event)" class="space-y-4">
+                                    <div>
+                                        <label for="b-name" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Banco Receptor</label>
+                                        <input id="b-name" type="text" required class="block w-full mt-1.5 rounded-xl border-0 bg-slate-950 py-2.5 px-4 text-white ring-1 ring-inset ring-slate-800 focus:ring-2 focus:ring-brand-500 text-sm" placeholder="Banco de Venezuela">
+                                    </div>
+                                    <div>
+                                        <label for="b-cedula" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Cédula del Titular</label>
+                                        <input id="b-cedula" type="text" required class="block w-full mt-1.5 rounded-xl border-0 bg-slate-950 py-2.5 px-4 text-white ring-1 ring-inset ring-slate-800 focus:ring-2 focus:ring-brand-500 text-sm" placeholder="V-12345678">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label for="b-phone" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Teléfono Asociado</label>
+                                            <input id="b-phone" type="text" required class="block w-full mt-1.5 rounded-xl border-0 bg-slate-950 py-2.5 px-4 text-white ring-1 ring-inset ring-slate-800 focus:ring-2 focus:ring-brand-500 text-sm" placeholder="0414-1234567">
+                                        </div>
+                                        <div>
+                                            <label for="b-rate" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Tasa BCV (Bs/$)</label>
+                                            <input id="b-rate" type="number" step="0.01" required class="block w-full mt-1.5 rounded-xl border-0 bg-slate-950 py-2.5 px-4 text-white ring-1 ring-inset ring-slate-800 focus:ring-2 focus:ring-brand-500 text-sm" placeholder="38.50">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label for="b-holder" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Nombre del Titular</label>
+                                        <input id="b-holder" type="text" required class="block w-full mt-1.5 rounded-xl border-0 bg-slate-950 py-2.5 px-4 text-white ring-1 ring-inset ring-slate-800 focus:ring-2 focus:ring-brand-500 text-sm" placeholder="Ruedalo C.A.">
+                                    </div>
+                                    <button type="submit" class="w-full py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-sm transition-all">
+                                        Guardar Configuración
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- Bots Toggle -->
+                            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between gap-6">
+                                <div>
+                                    <h2 class="font-bold text-white text-md mb-2">Simuladores de Conductores (Bots)</h2>
+                                    <p class="text-xs text-slate-400 leading-relaxed">
+                                        Los bots de conductores están diseñados para simular actividad GPS en Caracas (Plaza Altamira, etc.) y permitir pruebas de la interfaz móvil.
+                                    </p>
+                                    <p class="text-xs text-slate-400 mt-2 leading-relaxed font-semibold text-yellow-500">
+                                        ⚠️ Si deseas hacer pruebas reales con tus propios dos teléfonos (un pasajero y un conductor físico), desactiva esta opción para apagar los bots y evitar interferencias automáticas.
+                                    </p>
+                                </div>
+
+                                <div class="bg-slate-950/40 border border-slate-800 rounded-2xl p-5 flex flex-col gap-3">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm font-semibold text-slate-300">Estado de Simuladores</span>
+                                        <span id="bots-badge" class="text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Cargando...</span>
+                                    </div>
+                                    <button onclick="handleToggleBots()" class="w-full py-3 font-bold rounded-xl text-sm transition-all" id="bots-toggle-btn">
+                                        Cargando...
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VIEW: DIFFUSION/PUSH -->
+                    <div id="view-push" class="content-view hidden space-y-6">
+                        <div class="flex flex-col gap-1">
+                            <h1 class="text-2xl font-bold text-white">Difusión de Notificaciones Push</h1>
+                            <p class="text-sm text-slate-400">Envía alertas y avisos masivos o individuales a los teléfonos móviles</p>
+                        </div>
+
+                        <!-- Form -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-2xl">
+                            <h2 class="font-bold text-white text-md mb-4">Enviar Nueva Notificación</h2>
+                            <form id="push-form" onsubmit="handleSendPush(event)" class="space-y-4">
+                                <div>
+                                    <label for="n-title" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Título del Mensaje</label>
+                                    <input id="n-title" type="text" required class="block w-full mt-1.5 rounded-xl border-0 bg-slate-950 py-2.5 px-4 text-white ring-1 ring-inset ring-slate-800 focus:ring-2 focus:ring-brand-500 text-sm" placeholder="¡Alta Demanda en Chacao! ⚡">
+                                </div>
+                                <div>
+                                    <label for="n-body" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Contenido de la Notificación</label>
+                                    <textarea id="n-body" required rows="3" class="block w-full mt-1.5 rounded-xl border-0 bg-slate-950 py-2.5 px-4 text-white ring-1 ring-inset ring-slate-800 focus:ring-2 focus:ring-brand-500 text-sm resize-none" placeholder="Muchos pasajeros están solicitando viajes en Altamira y Las Mercedes. ¡Conéctate ya y duplica tus ganancias!"></textarea>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Destinatarios</label>
+                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+                                        <button type="button" onclick="setPushSegment('all')" id="target-all" class="push-target-btn py-2.5 border border-slate-800 rounded-xl text-xs font-bold text-slate-400 bg-slate-950/40 hover:text-slate-200">Todos</button>
+                                        <button type="button" onclick="setPushSegment('drivers')" id="target-drivers" class="push-target-btn py-2.5 border border-slate-800 rounded-xl text-xs font-bold text-slate-400 bg-slate-950/40 hover:text-slate-200">Conductores</button>
+                                        <button type="button" onclick="setPushSegment('passengers')" id="target-passengers" class="push-target-btn py-2.5 border border-slate-800 rounded-xl text-xs font-bold text-slate-400 bg-slate-950/40 hover:text-slate-200">Pasajeros</button>
+                                        <button type="button" onclick="setPushSegment('individual')" id="target-individual" class="push-target-btn py-2.5 border border-slate-800 rounded-xl text-xs font-bold text-slate-400 bg-slate-950/40 hover:text-slate-200">Individual</button>
+                                    </div>
+                                </div>
+
+                                <div id="individual-target-box" class="hidden">
+                                    <label for="n-user-id" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">ID Único del Usuario</label>
+                                    <input id="n-user-id" type="text" class="block w-full mt-1.5 rounded-xl border-0 bg-slate-950 py-2.5 px-4 text-white ring-1 ring-inset ring-slate-800 focus:ring-2 focus:ring-brand-500 text-sm" placeholder="id-usuario-123456">
+                                </div>
+
+                                <button type="submit" class="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-sm shadow-lg shadow-brand-500/10 transition-all duration-150">
+                                    Enviar Difusión de Notificación
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- WALLET ADJUST OVERLAY MODAL -->
+    <div id="wallet-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md space-y-4 shadow-xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-lg text-white">Ajustar Saldo de Billetera</h3>
+                <button onclick="closeWalletModal()" class="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="bg-slate-950/40 border border-slate-800 rounded-xl p-4">
+                <span class="text-xs text-slate-400 uppercase tracking-widest block">Usuario Destinatario</span>
+                <span class="font-bold text-white text-md block mt-1" id="wallet-user-name">...</span>
+                <span class="text-xs text-slate-500 block" id="wallet-user-email">...</span>
+                <span class="text-xs text-slate-400 mt-2 block">Saldo actual: <span class="font-bold text-brand-500" id="wallet-user-bal">$0.00</span></span>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label for="w-amount" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Monto en USD</label>
+                    <input id="w-amount" type="number" step="0.01" min="0.01" required class="block w-full mt-1.5 rounded-xl border-0 bg-slate-950 py-2.5 px-4 text-white ring-1 ring-inset ring-slate-800 focus:ring-2 focus:ring-brand-500 text-sm" placeholder="10.00">
+                </div>
+                <div>
+                    <label for="w-desc" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Descripción / Motivo (Opcional)</label>
+                    <input id="w-desc" type="text" class="block w-full mt-1.5 rounded-xl border-0 bg-slate-950 py-2.5 px-4 text-white ring-1 ring-inset ring-slate-800 focus:ring-2 focus:ring-brand-500 text-sm" placeholder="Ajuste administrativo o bono">
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <button onclick="handleWalletAdjustment('deduct')" class="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-red-600/10">
+                        Restar Saldo
+                    </button>
+                    <button onclick="handleWalletAdjustment('add')" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-emerald-600/10">
+                        Sumar Saldo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification (Floater) -->
+    <div id="toast-notif" class="fixed bottom-5 right-5 z-50 transform translate-y-10 opacity-0 bg-slate-900 border border-slate-800 py-3.5 px-5 rounded-xl flex items-center gap-3 shadow-lg pointer-events-none transition-all duration-300">
+        <div id="toast-icon-box" class="w-7 h-7 rounded-lg flex items-center justify-center text-xs"></div>
+        <span id="toast-text" class="text-sm font-semibold text-white">...</span>
+    </div>
+
+    <!-- MAIN APP SCRIPT -->
+    <script>
+        // Config
+        const API_BASE = window.location.origin + "/api";
+        let token = localStorage.getItem("donatex_token");
+        let activeTab = "stats";
+        let activePushTarget = "all";
+        let selectedUserIdForWallet = null;
+
+        // Icons initialize
+        function renderIcons() {
+            lucide.createIcons();
+        }
+
+        // Global Alert (Toast) Helper
+        function showToast(message, type = "success") {
+            const toastEl = document.getElementById("toast-notif");
+            const textEl = document.getElementById("toast-text");
+            const iconBox = document.getElementById("toast-icon-box");
+
+            textEl.innerText = message;
+            if (type === "success") {
+                iconBox.className = "w-7 h-7 rounded-lg flex items-center justify-center bg-emerald-500/10 text-emerald-500";
+                iconBox.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i>';
+            } else if (type === "error") {
+                iconBox.className = "w-7 h-7 rounded-lg flex items-center justify-center bg-red-500/10 text-red-500";
+                iconBox.innerHTML = '<i data-lucide="alert-triangle" class="w-4 h-4"></i>';
+            } else {
+                iconBox.className = "w-7 h-7 rounded-lg flex items-center justify-center bg-sky-500/10 text-sky-500";
+                iconBox.innerHTML = '<i data-lucide="info" class="w-4 h-4"></i>';
+            }
+
+            renderIcons();
+
+            toastEl.className = "fixed bottom-5 right-5 z-50 transform translate-y-0 opacity-100 bg-slate-900 border border-slate-800 py-3.5 px-5 rounded-xl flex items-center gap-3 shadow-lg pointer-events-none transition-all duration-300";
+            setTimeout(() => {
+                toastEl.className = "fixed bottom-5 right-5 z-50 transform translate-y-10 opacity-0 bg-slate-900 border border-slate-800 py-3.5 px-5 rounded-xl flex items-center gap-3 shadow-lg pointer-events-none transition-all duration-300";
+            }, 3000);
+        }
+
+        // Secure fetch helper with JWT and Token auto-expiry logout
+        async function req(path, options = {}) {
+            const headers = options.headers || {};
+            headers["Content-Type"] = "application/json";
+            if (token) {
+                headers["Authorization"] = `Bearer ${token}`;
+            }
+
+            const res = await fetch(API_BASE + path, {
+                ...options,
+                headers
+            });
+
+            if (res.status === 401 || res.status === 403) {
+                // Token expired or invalid admin role, force logout
+                handleLogout();
+                showToast("Sesión expirada o acceso no autorizado.", "error");
+                throw new Error("Unauthorized");
+            }
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({ detail: "Error desconocido" }));
+                throw new Error(err.detail || "Error en petición");
+            }
+
+            return res.json().catch(() => null);
+        }
+
+        // Authentication State check
+        async function checkAuth() {
+            if (!token) {
+                showView("login");
+                return;
+            }
+
+            try {
+                const me = await req("/auth/me");
+                if (me.role !== "admin") {
+                    showToast("Acceso denegado: No tienes rol administrativo.", "error");
+                    handleLogout();
+                    return;
+                }
+                
+                document.getElementById("admin-name").innerText = me.name;
+                document.getElementById("admin-avatar").innerText = me.name[0];
+                showView("app");
+                switchTab(activeTab);
+            } catch {
+                handleLogout();
+            }
+        }
+
+        function showView(view) {
+            if (view === "login") {
+                document.getElementById("login-view").style.display = "flex";
+                document.getElementById("app-view").style.display = "none";
+            } else {
+                document.getElementById("login-view").style.display = "none";
+                document.getElementById("app-view").style.display = "flex";
+            }
+            renderIcons();
+        }
+
+        // Handle Login Submission
+        async function handleLogin(e) {
+            e.preventDefault();
+            const btn = document.getElementById("login-submit-btn");
+            const errBox = document.getElementById("login-error");
+            const email = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+
+            btn.disabled = true;
+            btn.innerText = "Ingresando...";
+            errBox.classList.add("hidden");
+
+            try {
+                const res = await fetch(API_BASE + "/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({ detail: "Correo o contraseña incorrectos" }));
+                    throw new Error(err.detail || "Error al iniciar sesión");
+                }
+
+                const data = await res.json();
+                if (data.user.role !== "admin") {
+                    throw new Error("Acceso denegado: No tienes rol administrativo.");
+                }
+
+                localStorage.setItem("donatex_token", data.access_token);
+                token = data.access_token;
+                showToast("¡Inicio de sesión exitoso!", "success");
+                checkAuth();
+            } catch (err) {
+                errBox.innerText = err.message;
+                errBox.classList.remove("hidden");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Iniciar Sesión";
+            }
+        }
+
+        // Handle Logout
+        function handleLogout() {
+            localStorage.removeItem("donatex_token");
+            token = null;
+            showView("login");
+            showToast("Sesión cerrada.", "info");
+        }
+
+        // Tab Switching & View Loader Routing
+        function switchTab(tab) {
+            activeTab = tab;
+            
+            // Highlight active sidebar button
+            document.querySelectorAll(".tab-btn").forEach(btn => {
+                btn.className = "tab-btn flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl text-slate-400 hover:bg-slate-950/30 hover:text-slate-200 transition-all";
+            });
+            const activeBtn = document.getElementById("tab-" + tab);
+            if (activeBtn) {
+                activeBtn.className = "tab-btn flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl bg-brand-500/10 text-brand-500 transition-all";
+            }
+
+            // Show active content view
+            document.querySelectorAll(".content-view").forEach(view => {
+                view.classList.add("hidden");
+            });
+            const activeView = document.getElementById("view-" + tab);
+            if (activeView) {
+                activeView.classList.remove("hidden");
+            }
+
+            // Trigger loader
+            if (tab === "stats") loadStats();
+            if (tab === "users") loadUsers();
+            if (tab === "drivers") loadPendingDrivers();
+            if (tab === "rides") loadRides();
+            if (tab === "recharges") loadRecharges();
+            if (tab === "promos") loadPromos();
+            if (tab === "config") loadConfig();
+            if (tab === "push") setPushSegment("all");
+
+            renderIcons();
+        }
+
+        // Load 📊 Stats Tab
+        async function loadStats() {
+            try {
+                const s = await req("/admin/stats");
+                document.getElementById("stat-pending-recharges").innerText = s.pending_recharges;
+                document.getElementById("stat-total-users").innerText = s.total_users;
+                document.getElementById("stat-online-drivers").innerText = s.online_drivers;
+                document.getElementById("stat-completed-rides").innerText = s.completed_rides;
+                
+                const ratio = Math.round((s.total_passengers / Math.max(1, s.total_users)) * 100);
+                document.getElementById("stat-role-ratio").innerText = `${ratio}% Pasajeros · ${100-ratio}% Conductores`;
+                document.getElementById("stat-total-rides").innerText = `Total viajes registrados: ${s.total_rides}`;
+            } catch {}
+        }
+
+        // Load 👥 Users Tab
+        async function loadUsers() {
+            try {
+                const users = await req("/admin/users");
+                const tbody = document.getElementById("users-table-body");
+                tbody.innerHTML = "";
+
+                users.forEach(u => {
+                    const tr = document.createElement("tr");
+                    tr.className = "hover:bg-slate-900/20";
+                    
+                    const roleColor = u.role === "admin" ? "border-amber-500/30 text-amber-500 bg-amber-500/5" : u.role === "driver" ? "border-brand-500/30 text-brand-500 bg-brand-500/5" : "border-emerald-500/30 text-emerald-500 bg-emerald-500/5";
+                    const isOnlineText = u.role === "driver" ? (u.is_online ? '<span class="text-xs text-emerald-500 ml-1">● Online</span>' : '<span class="text-xs text-slate-500 ml-1">○ Offline</span>') : '';
+                    const activeBadge = u.is_active !== false 
+                        ? '<span class="px-2 py-0.5 border border-emerald-500/30 text-emerald-500 bg-emerald-500/5 rounded-full text-xs font-semibold">Activo</span>' 
+                        : '<span class="px-2 py-0.5 border border-red-500/30 text-red-500 bg-red-500/5 rounded-full text-xs font-semibold">Bloqueado</span>';
+                    
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 font-semibold text-sm">${u.name[0]}</div>
+                            <div>
+                                <div class="font-bold text-white">${u.name}</div>
+                                <div class="text-xs text-slate-500">ID: ${u.id}</div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-slate-200 font-medium">${u.email}</div>
+                            <div class="text-xs text-slate-400 mt-0.5">${u.phone}</div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-1.5">
+                                <span class="px-2.5 py-0.5 border rounded-full text-[10px] font-bold tracking-wider ${roleColor}">${u.role.toUpperCase()}</span>
+                                ${isOnlineText}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">${activeBadge}</td>
+                        <td class="px-6 py-4">
+                            <div class="font-bold text-emerald-400">$${(u.wallet_balance || 0).toFixed(2)}</div>
+                        </td>
+                        <td class="px-6 py-4 text-right space-x-2">
+                            <button onclick="toggleUserActive('${u.id}', ${u.is_active !== false})" class="px-2.5 py-1.5 border border-slate-800 hover:border-slate-700 bg-slate-950/30 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-200 transition-all">
+                                ${u.is_active !== false ? "Bloquear" : "Activar"}
+                            </button>
+                            <button onclick="openWalletModal('${u.id}', '${u.name}', '${u.email}', ${u.wallet_balance || 0})" class="px-2.5 py-1.5 bg-brand-500 hover:bg-brand-600 rounded-xl text-xs font-semibold text-white transition-all">
+                                Ajustar Saldo
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch {}
+        }
+
+        // Toggle user account activation state
+        async function toggleUserActive(userId, currentState) {
+            try {
+                await req(`/admin/users/${userId}/toggle-active`, { method: "POST" });
+                showToast(currentState ? "Usuario bloqueado con éxito" : "Usuario activado con éxito", "success");
+                loadUsers();
+            } catch (err) {
+                showToast(err.message, "error");
+            }
+        }
+
+        // Wallet Adjustment Modal Functions
+        function openWalletModal(id, name, email, balance) {
+            selectedUserIdForWallet = id;
+            document.getElementById("wallet-user-name").innerText = name;
+            document.getElementById("wallet-user-email").innerText = email;
+            document.getElementById("wallet-user-bal").innerText = `$${balance.toFixed(2)}`;
+            document.getElementById("w-amount").value = "";
+            document.getElementById("w-desc").value = "";
+            document.getElementById("wallet-modal").classList.remove("hidden");
+        }
+
+        function closeWalletModal() {
+            document.getElementById("wallet-modal").classList.add("hidden");
+            selectedUserIdForWallet = null;
+        }
+
+        async function handleWalletAdjustment(type) {
+            const amountInput = document.getElementById("w-amount");
+            const descInput = document.getElementById("w-desc");
+            const val = parseFloat(amountInput.value);
+
+            if (!val || val <= 0) {
+                showToast("Por favor ingresa un monto válido", "error");
+                return;
+            }
+
+            try {
+                const adjAmount = (type === "add" ? 1 : -1) * val;
+                await req(`/admin/users/${selectedUserIdForWallet}/wallet`, {
+                    method: "POST",
+                    body: { amount: adjAmount, description: descInput.value.trim() || undefined }
+                });
+                showToast(type === "add" ? "Saldo sumado correctamente" : "Saldo restado correctamente", "success");
+                closeWalletModal();
+                loadUsers();
+            } catch (err) {
+                showToast(err.message, "error");
+            }
+        }
+
+        // Load 🚗 Pending Drivers Tab
+        async function loadPendingDrivers() {
+            try {
+                const list = await req("/admin/drivers/pending");
+                const tbody = document.getElementById("pending-drivers-body");
+                tbody.innerHTML = "";
+
+                if (list.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-10 text-center text-slate-500 font-medium">No hay solicitudes pendientes.</td></tr>`;
+                    return;
+                }
+
+                list.forEach(u => {
+                    const tr = document.createElement("tr");
+                    tr.className = "hover:bg-slate-900/20";
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 font-bold text-white">${u.name}</td>
+                        <td class="px-6 py-4">
+                            <div>${u.email}</div>
+                            <div class="text-xs text-slate-500 mt-0.5">${u.phone}</div>
+                        </td>
+                        <td class="px-6 py-4 font-mono font-medium text-brand-500">${u.cedula || "N/A"}</td>
+                        <td class="px-6 py-4">
+                            <div class="font-semibold text-slate-200">${u.vehicle_model || "N/A"} (${u.vehicle_year || ""})</div>
+                            <div class="text-xs font-mono text-slate-500 uppercase mt-0.5">Placa: ${u.plate || "N/A"}</div>
+                        </td>
+                        <td class="px-6 py-4 text-right space-x-2">
+                            <button onclick="handleDriverAction('${u.id}', 'reject')" class="px-3 py-1.5 border border-red-900/30 text-red-500 bg-red-500/5 hover:bg-red-500/10 rounded-xl text-xs font-bold transition-all">Rechazar</button>
+                            <button onclick="handleDriverAction('${u.id}', 'approve')" class="px-3 py-1.5 border border-emerald-900/30 text-emerald-500 bg-emerald-500/5 hover:bg-emerald-500/10 rounded-xl text-xs font-bold transition-all">Aprobar</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch {}
+        }
+
+        async function handleDriverAction(driverId, action) {
+            try {
+                await req(`/admin/drivers/${driverId}/${action}`, { method: "POST" });
+                showToast(action === "approve" ? "Conductor aprobado con éxito" : "Conductor rechazado", "success");
+                loadPendingDrivers();
+            } catch (err) {
+                showToast(err.message, "error");
+            }
+        }
+
+        // Load 📍 Rides Tab
+        async function loadRides() {
+            try {
+                const list = await req("/admin/rides");
+                const tbody = document.getElementById("rides-table-body");
+                tbody.innerHTML = "";
+
+                if (list.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-slate-500 font-medium">No hay carreras registradas.</td></tr>`;
+                    return;
+                }
+
+                list.forEach(r => {
+                    const tr = document.createElement("tr");
+                    tr.className = "hover:bg-slate-900/20";
+                    
+                    const statColor = r.status === "completed" ? "text-emerald-500 bg-emerald-500/5 border-emerald-500/20" : r.status === "cancelled" ? "text-red-500 bg-red-500/5 border-red-500/20" : "text-amber-500 bg-amber-500/5 border-amber-500/20";
+                    const driverCell = r.driver_name ? `<div>${r.driver_name}</div><div class="text-xs text-slate-500">${r.driver_phone}</div>` : `<span class="text-slate-500 text-xs italic">Buscando...</span>`;
+
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 font-bold text-white">
+                            <div>${r.passenger_name}</div>
+                            <div class="text-xs text-slate-500 font-normal">Tel: ${r.passenger_phone}</div>
+                        </td>
+                        <td class="px-6 py-4 max-w-xs">
+                            <div class="text-slate-200 truncate font-medium">📍 ${r.origin_address}</div>
+                            <div class="text-xs text-slate-400 mt-1 truncate">🏁 ${r.dest_address}</div>
+                        </td>
+                        <td class="px-6 py-4 font-bold text-emerald-400">$${r.price_usd.toFixed(2)}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-0.5 border rounded-full text-[10px] font-bold ${statColor}">${r.status.toUpperCase()}</span>
+                        </td>
+                        <td class="px-6 py-4 font-medium">${driverCell}</td>
+                        <td class="px-6 py-4 text-right">
+                            <button onclick="handleDeleteRide('${r.id}')" class="px-3 py-1.5 bg-red-950/20 hover:bg-red-950/40 text-red-500 border border-red-900/30 rounded-xl text-xs font-bold transition-all">Eliminar</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch {}
+        }
+
+        async function handleDeleteRide(rideId) {
+            if (!confirm("¿Estás seguro de que deseas eliminar esta carrera del sistema?")) return;
+            try {
+                await req(`/rides/${rideId}`, { method: "DELETE" });
+                showToast("Carrera eliminada correctamente", "success");
+                loadRides();
+            } catch (err) {
+                showToast(err.message, "error");
+            }
+        }
+
+        // Load 💳 Recharges Tab
+        async function loadRecharges() {
+            try {
+                const list = await req("/admin/recharges");
+                const tbody = document.getElementById("recharges-table-body");
+                tbody.innerHTML = "";
+
+                if (list.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-slate-500 font-medium">No hay solicitudes de recarga.</td></tr>`;
+                    return;
+                }
+
+                list.forEach(r => {
+                    const tr = document.createElement("tr");
+                    tr.className = "hover:bg-slate-900/20";
+                    
+                    const statColor = r.status === "approved" ? "text-emerald-500 bg-emerald-500/5 border-emerald-500/20" : r.status === "rejected" ? "text-red-500 bg-red-500/5 border-red-500/20" : "text-amber-500 bg-amber-500/5 border-amber-500/20";
+                    const actions = r.status === "pending" 
+                        ? `<button onclick="handleRechargeAction('${r.id}', 'reject')" class="px-2.5 py-1.2 border border-red-900/30 text-red-500 bg-red-500/5 hover:bg-red-500/10 rounded-xl text-xs font-bold transition-all">Rechazar</button>
+                           <button onclick="handleRechargeAction('${r.id}', 'approve')" class="px-2.5 py-1.2 border border-emerald-900/30 text-emerald-500 bg-emerald-500/5 hover:bg-emerald-500/10 rounded-xl text-xs font-bold transition-all">Aprobar</button>`
+                        : `<span class="text-slate-500 text-xs font-semibold">-</span>`;
+
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 font-bold text-white">${r.user_name}</td>
+                        <td class="px-6 py-4">
+                            <div class="font-mono text-xs font-bold text-brand-500">${r.reference}</div>
+                            <div class="text-xs text-slate-500 mt-0.5">Banco: ${r.sender_bank}</div>
+                        </td>
+                        <td class="px-6 py-4 font-medium text-slate-300">${r.sender_phone}</td>
+                        <td class="px-6 py-4 font-bold text-emerald-400">$${r.amount_usd.toFixed(2)}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-0.5 border rounded-full text-[10px] font-bold ${statColor}">${r.status.toUpperCase()}</span>
+                        </td>
+                        <td class="px-6 py-4 text-right space-x-2">${actions}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch {}
+        }
+
+        async function handleRechargeAction(recId, action) {
+            try {
+                await req(`/admin/recharges/${recId}/${action}`, { method: "POST" });
+                showToast(action === "approve" ? "Recarga aprobada correctamente" : "Recarga rechazada", "success");
+                loadRecharges();
+            } catch (err) {
+                showToast(err.message, "error");
+            }
+        }
+
+        // Load 🏷️ Promo Codes Tab
+        async function loadPromos() {
+            try {
+                const list = await req("/admin/promocodes");
+                const tbody = document.getElementById("promos-table-body");
+                tbody.innerHTML = "";
+
+                if (list.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-10 text-center text-slate-500 font-medium">No hay códigos promocionales activos.</td></tr>`;
+                    return;
+                }
+
+                list.forEach(p => {
+                    const tr = document.createElement("tr");
+                    tr.className = "hover:bg-slate-900/20";
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 font-bold text-white tracking-wide uppercase font-mono">${p.code}</td>
+                        <td class="px-6 py-4 font-bold text-slate-300">$${p.discount_usd.toFixed(2)}</td>
+                        <td class="px-6 py-4 font-bold text-emerald-400">+$${p.recharge_amount_usd.toFixed(2)}</td>
+                        <td class="px-6 py-4 text-right">
+                            <button onclick="handleDeletePromo('${p.code}')" class="px-2.5 py-1.5 bg-red-950/20 hover:bg-red-950/40 text-red-500 border border-red-900/30 rounded-xl text-xs font-bold transition-all">Eliminar</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch {}
+        }
+
+        async function handleCreatePromo(e) {
+            e.preventDefault();
+            const code = document.getElementById("p-code").value.trim().toUpperCase();
+            const discount = parseFloat(document.getElementById("p-discount").value) || 0;
+            const recharge = parseFloat(document.getElementById("p-recharge").value) || 0;
+
+            try {
+                await req("/admin/promocodes", {
+                    method: "POST",
+                    body: { code, discount_usd: discount, recharge_amount_usd: recharge }
+                });
+                showToast("Código de promoción creado con éxito", "success");
+                document.getElementById("promo-form").reset();
+                loadPromos();
+            } catch (err) {
+                showToast(err.message, "error");
+            }
+        }
+
+        async function handleDeletePromo(code) {
+            if (!confirm("¿Estás seguro de que deseas eliminar este código?")) return;
+            try {
+                await req(`/admin/promocodes/${code}`, { method: "DELETE" });
+                showToast("Código eliminado", "info");
+                loadPromos();
+            } catch (err) {
+                showToast(err.message, "error");
+            }
+        }
+
+        // Load ⚙️ Config & Bots Tab
+        async function loadConfig() {
+            try {
+                const [bank, bots] = await Promise.all([
+                    req("/wallet/bank-config"),
+                    req("/admin/bots-status")
+                ]);
+
+                // Set bank values
+                document.getElementById("b-name").value = bank.bank_name;
+                document.getElementById("b-cedula").value = bank.cedula;
+                document.getElementById("b-phone").value = bank.phone;
+                document.getElementById("b-rate").value = bank.usd_to_bs_rate;
+                document.getElementById("b-holder").value = bank.holder_name;
+
+                // Set bots values
+                updateBotsUI(bots.bots_enabled);
+            } catch {}
+        }
+
+        async function handleSaveBankConfig(e) {
+            e.preventDefault();
+            const bank_name = document.getElementById("b-name").value.trim();
+            const cedula = document.getElementById("b-cedula").value.trim();
+            const phone = document.getElementById("b-phone").value.trim();
+            const usd_to_bs_rate = parseFloat(document.getElementById("b-rate").value) || 0;
+            const holder_name = document.getElementById("b-holder").value.trim();
+
+            try {
+                await req("/admin/bank-config", {
+                    method: "PUT",
+                    body: { bank_name, cedula, phone, holder_name, usd_to_bs_rate }
+                });
+                showToast("Configuración bancaria guardada con éxito", "success");
+            } catch (err) {
+                showToast(err.message, "error");
+            }
+        }
+
+        function updateBotsUI(enabled) {
+            const badge = document.getElementById("bots-badge");
+            const btn = document.getElementById("bots-toggle-btn");
+
+            if (enabled) {
+                badge.className = "text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider bg-emerald-500/10 text-emerald-500 border border-emerald-500/20";
+                badge.innerText = "Activos";
+                btn.className = "w-full py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-sm transition-all";
+                btn.innerText = "Desactivar Conductores de Prueba (Bots)";
+            } else {
+                badge.className = "text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider bg-red-500/10 text-red-500 border border-red-500/20";
+                badge.innerText = "Apagados";
+                btn.className = "w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition-all";
+                btn.innerText = "Activar Conductores de Prueba (Bots)";
+            }
+            botsEnabled = enabled;
+        }
+
+        async function handleToggleBots() {
+            try {
+                const res = await req("/admin/toggle-bots", { method: "POST" });
+                updateBotsUI(res.bots_enabled);
+                showToast(res.bots_enabled ? "Conductores simulados activados" : "Conductores simulados desactivados", "success");
+            } catch (err) {
+                showToast(err.message, "error");
+            }
+        }
+
+        // Load 📢 Push Diffusion Tab
+        function setPushSegment(segment) {
+            activePushTarget = segment;
+            document.querySelectorAll(".push-target-btn").forEach(btn => {
+                btn.className = "push-target-btn py-2.5 border border-slate-800 rounded-xl text-xs font-bold text-slate-400 bg-slate-950/40 hover:text-slate-200";
+            });
+            const activeBtn = document.getElementById("target-" + segment);
+            if (activeBtn) {
+                activeBtn.className = "push-target-btn py-2.5 bg-brand-500 hover:bg-brand-600 text-white border border-brand-500 rounded-xl text-xs font-bold transition-all";
+            }
+
+            const box = document.getElementById("individual-target-box");
+            if (segment === "individual") {
+                box.classList.remove("hidden");
+                document.getElementById("n-user-id").required = true;
+            } else {
+                box.classList.add("hidden");
+                document.getElementById("n-user-id").required = false;
+            }
+        }
+
+        async function handleSendPush(e) {
+            e.preventDefault();
+            const title = document.getElementById("n-title").value.trim();
+            const body = document.getElementById("n-body").value.trim();
+            const userId = document.getElementById("n-user-id").value.trim();
+
+            try {
+                await req("/admin/push", {
+                    method: "POST",
+                    body: {
+                        title,
+                        body,
+                        target: activePushTarget,
+                        user_id: activePushTarget === "individual" ? userId : undefined
+                    }
+                });
+                showToast("Notificación push masiva enviada con éxito", "success");
+                document.getElementById("push-form").reset();
+                setPushSegment("all");
+            } catch (err) {
+                showToast(err.message, "error");
+            }
+        }
+
+        // Initial setup and check
+        checkAuth();
+    </script>
+</body>
+</html>

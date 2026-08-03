@@ -1297,4 +1297,11 @@ async def admin_toggle_bots(_=Depends(require_roles("admin"))):
 async def root():
     return {"app": "RideVE", "status": "ok"}
 
+from fastapi.staticfiles import StaticFiles
+
+# Mount static files at /donatex
+static_dir = ROOT_DIR / "static-admin"
+static_dir.mkdir(exist_ok=True)
+app.mount("/donatex", StaticFiles(directory=static_dir, html=True), name="static-admin")
+
 app.include_router(api)
