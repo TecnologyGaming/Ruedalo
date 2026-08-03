@@ -14,6 +14,9 @@ import { RuedaloArrowLogo, SteeringWheelIcon, GoogleLogo, AppleLogo, FacebookLog
 import { auth } from "@/src/lib/firebase";
 import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 
+// Import API and setToken helpers
+import { api, setToken } from "@/src/lib/api";
+
 /**
  * 02. BIENVENIDO / LOGIN SCREEN
  * Pixel-Perfect Implementation - Extracted from Official Mockup
@@ -21,7 +24,7 @@ import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
  */
 export default function LoginScreen() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { setUser } = useAuth();
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   
@@ -31,7 +34,6 @@ export default function LoginScreen() {
   // Phone OTP verification modal state
   const [otpModal, setOtpModal] = useState(false);
   const [otpCode, setOtpCode] = useState("");
-  const [sentOtp, setSentOtp] = useState("");
   const [confirmationResult, setConfirmationResult] = useState<any>(null);
 
   const onSendOtp = async () => {
@@ -40,26 +42,16 @@ export default function LoginScreen() {
       return;
     }
     
-    let targetEmail = "pasajero@rideve.com";
-    let targetPassword = "Demo1234!";
-    
-    if (phone.includes("2222222") || activeTab === "driver") {
-      targetEmail = "conductor@rideve.com";
-    } else if (phone.includes("0000000") || phone.includes("admin")) {
-      targetEmail = "admin@rideve.com";
-      targetPassword = "Admin1234!";
-    }
-    
     setLoading(true);
 
-    if (Platform.OS === 'web') {
-      try {
-        let cleanPhone = phone.replace(/[-\s]/g, "");
-        if (cleanPhone.startsWith("0")) {
-          cleanPhone = cleanPhone.substring(1);
-        }
-        const formattedPhone = `+58${cleanPhone}`;
-        
+    try {
+      let cleanPhone = phone.replace(/[-\s]/g, "");
+      if (cleanPhone.startsWith("0")) {
+        cleanPhone = cleanPhone.substring(1);
+      }
+      const formattedPhone = `+58${cleanPhone}`;
+      
+      if (Platform.OS === 'web') {
         let recaptcha = (window as any).recaptchaVerifier;
         if (!recaptcha) {
           let el = document.getElementById("recaptcha-container");
@@ -74,108 +66,80 @@ export default function LoginScreen() {
           (window as any).recaptchaVerifier = recaptcha;
         }
 
-        console.log("Enviando SMS real a:", formattedPhone);
+        console.log("Enviando SMS real de Firebase a:", formattedPhone);
         const confirmResult = await signInWithPhoneNumber(auth, formattedPhone, recaptcha);
         setConfirmationResult(confirmResult);
         setLoading(false);
         setOtpModal(true);
         toast("Código enviado por SMS real a tu teléfono", "success");
-        return;
-      } catch (e: any) {
-        console.error("Firebase Auth Web Error:", e);
-        toast(`Error al enviar SMS real: ${e?.message}. Usando simulación de respaldo...`, "warning", { duration: 6000 });
+      } else {
+        // En dispositivos móviles nativos usando Firebase Web SDK, el Recaptcha se puede instanciar de forma similar
+        // o mediante un Webview de respaldo. Si se está ejecutando dentro de un APK compilado, el SDK se comunicará
+        // con la red celular. De lo contrario, le indicamos que use la versión Web de producción.
+        toast("Firebase Phone Auth iniciado. Valida en tu navegador o APK de producción.", "info");
+        setLoading(false);
       }
-    }
-
-    const mockCode = Math.floor(100000 + Math.random() * 900000).toString();
-    setSentOtp(mockCode);
-    
-    setTimeout(() => {
+    } catch (e: any) {
+      console.error("Firebase Auth Error:", e);
+      toast(`Error al enviar SMS real: ${e?.message ?? "Verifica tu configuración de Firebase"}`, "error");
       setLoading(false);
-      setOtpModal(true);
-      toast(`[Firebase Auth SMS] Código enviado: ${mockCode}`, "success", { duration: 6000 });
-    }, 1200);
+    }
   };
 
   const onVerifyOtp = async () => {
-    if (Platform.OS === 'web' && confirmationResult) {
-      try {
-        setLoading(true);
-        setOtpModal(false);
-        
-        console.log("Verificando código real:", otpCode);
-        const userCredential = await confirmationResult.confirm(otpCode);
-        console.log("Firebase verificado exitosamente:", userCredential.user);
-        
-        let targetEmail = "pasajero@rideve.com";
-        let targetPassword = "Demo1234!";
-        
-        if (phone.includes("2222222") || activeTab === "driver") {
-          targetEmail = "conductor@rideve.com";
-        } else if (phone.includes("0000000") || phone.includes("admin")) {
-          targetEmail = "admin@rideve.com";
-          targetPassword = "Admin1234!";
-        }
-        
-        const u = await login(targetEmail, targetPassword);
-        toast(`¡Verificado! Bienvenido a Ruedalo, ${u.name}`, "success");
-        
-        if (u.role === "passenger") router.replace("/(passenger)");
-        else if (u.role === "driver") router.replace("/(driver)");
-        else router.replace("/(admin)");
-        return;
-      } catch (e: any) {
-        toast(`Código incorrecto o error: ${e?.message}`, "error");
-        setLoading(false);
-        setOtpModal(true);
-        return;
-      }
-    }
-
-    if (otpCode !== sentOtp && otpCode !== "123456") {
-      toast("Código de verificación incorrecto", "error");
+    if (!otpCode.trim() || otpCode.length < 6) {
+      toast("Ingresa el código de 6 dígitos", "error");
       return;
     }
-    
-    try {
-      setLoading(true);
-      setOtpModal(false);
-      
-      let targetEmail = "pasajero@rideve.com";
-      let targetPassword = "Demo1234!";
-      
-      if (phone.includes("2222222") || activeTab === "driver") {
-        targetEmail = "conductor@rideve.com";
-      } else if (phone.includes("0000000") || phone.includes("admin")) {
-        targetEmail = "admin@rideve.com";
-        targetPassword = "Admin1234!";
-      }
-      
-      const u = await login(targetEmail, targetPassword);
-      toast(`Verificado. Bienvenido a Ruedalo, ${u.name}`, "success");
-      
-      if (u.role === "passenger") router.replace("/(passenger)");
-      else if (u.role === "driver") router.replace("/(driver)");
-      else router.replace("/(admin)");
-    } catch (e: any) {
-      toast(e?.message ?? "Error al iniciar sesión", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const quickFill = (role: "passenger" | "driver" | "admin") => {
-    if (role === "passenger") {
-      setActiveTab("passenger");
-      setPhone("04141111111");
-    }
-    if (role === "driver") {
-      setActiveTab("driver");
-      setPhone("04142222222");
-    }
-    if (role === "admin") {
-      setActiveTab("passenger");
-      setPhone("00000000000");
+    if (confirmationResult) {
+      try {
+        setLoading(true);
+        
+        console.log("Verificando código real con Firebase...");
+        const userCredential = await confirmationResult.confirm(otpCode);
+        const verifiedPhone = userCredential.user.phoneNumber; // ej: +584141234567
+        console.log("Firebase verificado exitosamente:", verifiedPhone);
+        
+        // Llamar a /auth/phone-login
+        try {
+          const res = await api<any>("/auth/phone-login", {
+            method: "POST",
+            body: { phone: verifiedPhone },
+            auth: false
+          });
+          
+          // Usuario existe, iniciar sesión normalmente
+          await setToken(res.access_token);
+          setUser(res.user);
+          toast(`¡Bienvenido de vuelta a Ruedalo!`, "success");
+          setOtpModal(false);
+          
+          // Redirigir de acuerdo al rol
+          if (res.user.role === "passenger") router.replace("/(passenger)");
+          else if (res.user.role === "driver") router.replace("/(driver)");
+          else router.replace("/(admin)");
+          
+        } catch (apiErr: any) {
+          if (apiErr.status === 404) {
+            // Usuario no existe, redirigir al flujo normal de registro, prellenando el teléfono
+            toast("Teléfono verificado. Por favor, completa tu registro.", "info");
+            setOtpModal(false);
+            router.push({
+              pathname: "/(auth)/register",
+              params: { phone: verifiedPhone }
+            });
+          } else {
+            toast(apiErr?.message ?? "Error en el servidor de Ruedalo", "error");
+          }
+        }
+      } catch (e: any) {
+        toast(`Código de verificación inválido: ${e?.message}`, "error");
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      toast("No se ha iniciado la verificación por SMS.", "error");
     }
   };
 
@@ -368,34 +332,6 @@ export default function LoginScreen() {
                 <Check size={14} color={colors.success} strokeWidth={3} />
                 <Text style={styles.featureText}>Confiable</Text>
               </View>
-            </View>
-          </View>
-
-          {/* Developer Test Panel */}
-          <View style={styles.devPanel}>
-            <Text style={styles.devPanelTitle}>ACCESO RÁPIDO DE PRUEBAS</Text>
-            <View style={styles.devButtonsRow}>
-              <TouchableOpacity 
-                style={styles.devButton} 
-                onPress={() => quickFill("passenger")} 
-                testID="quick-passenger-btn"
-              >
-                <Text style={styles.devButtonText}>Pasajero</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.devButton} 
-                onPress={() => quickFill("driver")} 
-                testID="quick-driver-btn"
-              >
-                <Text style={styles.devButtonText}>Conductor</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.devButton} 
-                onPress={() => quickFill("admin")} 
-                testID="quick-admin-btn"
-              >
-                <Text style={styles.devButtonText}>Admin</Text>
-              </TouchableOpacity>
             </View>
           </View>
         </KeyboardAwareScrollView>

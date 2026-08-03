@@ -72,7 +72,7 @@ RideStatus = Literal["requested", "accepted", "in_progress", "completed", "cance
 
 class RegisterIn(BaseModel):
     email: EmailStr
-    password: str
+    password: Optional[str] = None
     name: str
     phone: str
     role: Literal["passenger", "driver"] = "passenger"
@@ -83,6 +83,9 @@ class RegisterIn(BaseModel):
 class LoginIn(BaseModel):
     email: str
     password: str
+
+class PhoneLoginIn(BaseModel):
+    phone: str
 
 class UserOut(BaseModel):
     id: str
@@ -535,7 +538,7 @@ async def register(body: RegisterIn):
         "email": body.email,
         "name": body.name,
         "phone": body.phone,
-        "password_hash": hash_password(body.password),
+        "password_hash": hash_password(body.password) if body.password else "",
         "role": body.role,
         "wallet_balance": welcome_balance,
         "is_online": False,
@@ -582,6 +585,39 @@ async def login(body: LoginIn):
         raise HTTPException(status_code=401, detail="Correo o contraseña incorrectos")
     token = create_token(user["id"], user["role"])
     return TokenOut(access_token=token, user=user_to_out(user))
+
+def clean_phone_for_comparison(p: str) -> str:
+    if not p:
+        return ""
+    p_clean = p.replace("-", "").replace(" ", "").replace("+", "")
+    if p_clean.startswith("58"):
+        p_clean = p_clean[2:]
+    if p_clean.startswith("0"):
+        p_clean = p_clean[1:]
+    return p_clean
+
+@api.post("/auth/phone-login", response_model=TokenOut)
+async def phone_login(body: PhoneLoginIn):
+    target_phone = clean_phone_for_comparison(body.phone)
+    if not target_phone:
+        raise HTTPException(status_code=400, detail="Número de teléfono inválido")
+        
+    # Query all users and check their cleaned phone number to find a match
+    users = await users_col.find({}).to_list(None)
+    matched_user = None
+    for u in users:
+        if u.get("phone") and clean_phone_for_comparison(u["phone"]) == target_phone:
+            matched_user = u
+            break
+            
+    if not matched_user:
+        raise HTTPException(status_code=404, detail="Usuario no registrado. Completa tu registro.")
+        
+    if not matched_user.get("is_active", True):
+        raise HTTPException(status_code=403, detail="Tu cuenta ha sido desactivada por el administrador")
+        
+    token = create_token(matched_user["id"], matched_user["role"])
+    return TokenOut(access_token=token, user=user_to_out(matched_user))
 
 @api.get("/auth/me", response_model=UserOut)
 async def me(user=Depends(get_current_user)):

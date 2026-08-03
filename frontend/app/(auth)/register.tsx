@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
@@ -13,10 +13,11 @@ import { ArrowLeft, User, Car, UploadCloud, CheckCircle2, Lock, Mail, Phone, Boo
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { phone: paramPhone } = useLocalSearchParams<{ phone?: string }>();
   const { register } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState(paramPhone || "");
   const [password, setPassword] = useState("");
   const [cedula, setCedula] = useState("");
   const [cedulaPhoto, setCedulaPhoto] = useState<string | null>(null);
@@ -35,11 +36,12 @@ export default function RegisterScreen() {
   };
 
   const onSubmit = async () => {
-    if (!name.trim() || !email.trim() || !phone.trim() || !password || !cedula.trim()) {
+    const isPasswordless = !!paramPhone;
+    if (!name.trim() || !email.trim() || !phone.trim() || (!isPasswordless && !password) || !cedula.trim()) {
       toast("Completa todos los campos, incluyendo la Cédula", "error");
       return;
     }
-    if (password.length < 6) {
+    if (!isPasswordless && password.length < 6) {
       toast("La contraseña debe tener al menos 6 caracteres", "error");
       return;
     }
@@ -132,16 +134,19 @@ export default function RegisterScreen() {
             keyboardType="phone-pad" 
             leftIcon={<Phone size={18} color={colors.textSecondary} />}
             testID="register-phone-input" 
+            editable={!paramPhone}
           />
-          <FieldInput 
-            label="Contraseña" 
-            value={password} 
-            onChangeText={setPassword} 
-            placeholder="Mínimo 6 caracteres" 
-            secureTextEntry 
-            leftIcon={<Lock size={18} color={colors.textSecondary} />}
-            testID="register-password-input" 
-          />
+          {!paramPhone && (
+            <FieldInput 
+              label="Contraseña" 
+              value={password} 
+              onChangeText={setPassword} 
+              placeholder="Mínimo 6 caracteres" 
+              secureTextEntry 
+              leftIcon={<Lock size={18} color={colors.textSecondary} />}
+              testID="register-password-input" 
+            />
+          )}
 
           <View style={styles.divider} />
           
