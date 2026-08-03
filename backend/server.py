@@ -1217,8 +1217,8 @@ async def apply_promocode(body: ApplyPromoIn, user=Depends(get_current_user)):
 @api.get("/admin/drivers/locations")
 async def admin_drivers_locations(_=Depends(require_roles("admin"))):
     drivers = await users_col.find(
-        {"role": "driver", "is_online": True, "lat": {"$ne": None}},
-        {"id": 1, "name": 1, "lat": 1, "lng": 1, "phone": 1, "_id": 0}
+        {"role": "driver", "lat": {"$ne": None}},
+        {"id": 1, "name": 1, "lat": 1, "lng": 1, "phone": 1, "is_online": 1, "_id": 0}
     ).to_list(100)
     return drivers
 

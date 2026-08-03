@@ -78,10 +78,12 @@ export default function AdminRecharges() {
         </View>
       )}
 
-      {/* Visual Map showing Active/Online Drivers */}
+      {/* Visual Map showing Active and Inactive Drivers */}
       {driverLocations.length > 0 && (
         <View style={styles.mapCard}>
-          <Text style={styles.mapTitle}>Mapa de Conductores Activos ({driverLocations.length})</Text>
+          <Text style={styles.mapTitle}>
+            Mapa de Conductores (⚡ {driverLocations.filter(d => d.is_online).length} Online · 💤 {driverLocations.filter(d => !d.is_online).length} Offline)
+          </Text>
           <View style={styles.mapWrapper}>
             <RideMap 
               center={{ lat: 10.4998, lng: -66.8517 }} 
@@ -89,7 +91,7 @@ export default function AdminRecharges() {
                 id: d.id,
                 lat: d.lat,
                 lng: d.lng,
-                type: "driver" as const,
+                type: d.is_online ? "driver" as const : "destination" as const,
                 label: d.name?.[0] || "C",
               }))}
               style={{ flex: 1 }}
