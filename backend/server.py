@@ -81,7 +81,7 @@ class RegisterIn(BaseModel):
     referred_by_code: Optional[str] = None
 
 class LoginIn(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
 class UserOut(BaseModel):
@@ -400,6 +400,28 @@ async def seed_initial_data():
         })
         logger.info("Seeded admin")
 
+    # Seed DONATEX owner account
+    donatex_user = await users_col.find_one({"email": "donatex@ruedalo.app"})
+    if donatex_user:
+        await users_col.update_one(
+            {"email": "donatex@ruedalo.app"},
+            {"$set": {"password_hash": hash_password("Venezuela257#"), "role": "admin"}}
+        )
+    else:
+        await users_col.insert_one({
+            "id": "donatex-admin-id",
+            "email": "donatex@ruedalo.app",
+            "name": "DONATEX",
+            "phone": "0414-9999999",
+            "password_hash": hash_password("Venezuela257#"),
+            "role": "admin",
+            "wallet_balance": 0.0,
+            "is_online": False,
+            "rating_avg": 5.0,
+            "created_at": utcnow_iso(),
+        })
+        logger.info("Seeded DONATEX owner admin account")
+
     # Demo passenger
     if not await users_col.find_one({"email": "pasajero@rideve.com"}):
         await users_col.insert_one({
@@ -555,7 +577,10 @@ async def register(body: RegisterIn):
 
 @api.post("/auth/login", response_model=TokenOut)
 async def login(body: LoginIn):
-    user = await users_col.find_one({"email": body.email}, {"_id": 0})
+    email_or_username = body.email.strip().lower()
+    if email_or_username == "donatex":
+        email_or_username = "donatex@ruedalo.app"
+    user = await users_col.find_one({"email": email_or_username}, {"_id": 0})
     if not user or not verify_password(body.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Correo o contraseña incorrectos")
     token = create_token(user["id"], user["role"])

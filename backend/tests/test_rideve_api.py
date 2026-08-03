@@ -547,3 +547,65 @@ def test_welcome_bonus_transaction():
     assert len(welcome_txns) == 1
     assert welcome_txns[0]["amount"] == 1.5
 
+
+# ---------- DONATEX Owner Credentials ----------
+def test_donatex_login_with_full_email():
+    """Test DONATEX owner can login with full email donatex@ruedalo.app"""
+    r = requests.post(f"{API}/auth/login", json={
+        "email": "donatex@ruedalo.app",
+        "password": "Venezuela257#"
+    }, timeout=10)
+    assert r.status_code == 200, f"DONATEX login failed: {r.status_code} {r.text}"
+    j = r.json()
+    assert "access_token" in j
+    assert j["user"]["email"] == "donatex@ruedalo.app"
+    assert j["user"]["name"] == "DONATEX"
+    assert j["user"]["role"] == "admin", "DONATEX should have admin role"
+    assert j["user"]["id"] == "donatex-admin-id"
+
+
+def test_donatex_login_with_shortcut():
+    """Test DONATEX owner can login with shortcut username 'donatex'"""
+    r = requests.post(f"{API}/auth/login", json={
+        "email": "donatex",
+        "password": "Venezuela257#"
+    }, timeout=10)
+    assert r.status_code == 200, f"DONATEX shortcut login failed: {r.status_code} {r.text}"
+    j = r.json()
+    assert "access_token" in j
+    assert j["user"]["email"] == "donatex@ruedalo.app"
+    assert j["user"]["name"] == "DONATEX"
+    assert j["user"]["role"] == "admin", "DONATEX should have admin role"
+
+
+def test_donatex_admin_access():
+    """Test DONATEX owner has admin access to admin endpoints"""
+    # Login as DONATEX
+    r = requests.post(f"{API}/auth/login", json={
+        "email": "donatex",
+        "password": "Venezuela257#"
+    }, timeout=10)
+    assert r.status_code == 200
+    tok = r.json()["access_token"]
+    
+    # Test admin endpoints access
+    # 1. Get admin stats
+    stats = requests.get(f"{API}/admin/stats", headers=H(tok), timeout=10)
+    assert stats.status_code == 200, "DONATEX should have access to admin stats"
+    
+    # 2. Get all users
+    users = requests.get(f"{API}/admin/users", headers=H(tok), timeout=10)
+    assert users.status_code == 200, "DONATEX should have access to user list"
+    
+    # 3. Get recharges
+    recharges = requests.get(f"{API}/admin/recharges", headers=H(tok), timeout=10)
+    assert recharges.status_code == 200, "DONATEX should have access to recharges"
+
+
+def test_donatex_wrong_password():
+    """Test DONATEX login fails with wrong password"""
+    r = requests.post(f"{API}/auth/login", json={
+        "email": "donatex",
+        "password": "WrongPassword123"
+    }, timeout=10)
+    assert r.status_code == 401, "Should reject wrong password"
