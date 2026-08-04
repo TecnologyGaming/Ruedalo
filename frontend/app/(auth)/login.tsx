@@ -35,13 +35,16 @@ const WEBVIEW_HTML = `
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <style>
     body { font-family: sans-serif; background-color: #020617; color: #fff; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-    #recaptcha-container { margin: auto; }
+    #recaptcha-container { margin: auto; min-height: 80px; display: flex; align-items: center; justify-content: center; }
     h3 { margin-bottom: 20px; font-weight: bold; text-align: center; color: #fff; font-size: 16px; }
+    #status { margin-top: 15px; font-size: 12px; color: #94a3b8; text-align: center; }
   </style>
 </head>
 <body>
-  <h3>Verificando que no eres un robot...</h3>
+  <h3 id="header-text">Verificando seguridad...</h3>
   <div id="recaptcha-container"></div>
+  <div id="status">Cargando módulos de seguridad...</div>
+
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyBzsybeLDdXmxiF4jYbt3zYa5N8x1xtKKQ",
@@ -51,23 +54,58 @@ const WEBVIEW_HTML = `
       messagingSenderId: "109884111046",
       appId: "1:109884111046:web:b5a4b65c45"
     };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
 
+    let authInstance = null;
     let confirmationResult = null;
-
-    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-      size: 'normal',
-      callback: (response) => {
-        // solved
-      }
-    });
+    let recaptchaVerifierInstance = null;
 
     function sendToNative(data) {
-      window.ReactNativeWebView.postMessage(JSON.stringify(data));
+      if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+        window.ReactNativeWebView.postMessage(JSON.stringify(data));
+      } else {
+        console.warn("ReactNativeWebView no detectado, reintentando...", data);
+        setTimeout(() => sendToNative(data), 250);
+      }
     }
 
-    window.addEventListener("message", async (event) => {
+    function updateStatus(text, header) {
+      document.getElementById("status").innerText = text;
+      if (header) {
+        document.getElementById("header-text").innerText = header;
+      }
+    }
+
+    // Inicializar todo al cargar la página
+    window.onload = function() {
+      try {
+        firebase.initializeApp(firebaseConfig);
+        authInstance = firebase.auth();
+        updateStatus("Iniciando verificador de reCAPTCHA...");
+
+        recaptchaVerifierInstance = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+          size: 'normal',
+          callback: (response) => {
+            sendToNative({ action: "recaptchaSolved" });
+          },
+          'expired-callback': () => {
+            sendToNative({ action: "recaptchaExpired" });
+          }
+        });
+
+        recaptchaVerifierInstance.render().then((widgetId) => {
+          updateStatus("Por favor, resuelve el reCAPTCHA arriba.", "Verificación Requerida");
+          // Notificar a React Native que Firebase y reCAPTCHA están listos
+          sendToNative({ action: "ready" });
+        }).catch((err) => {
+          sendToNative({ action: "error", message: "Error al renderizar reCAPTCHA: " + err.message });
+        });
+
+      } catch (err) {
+        sendToNative({ action: "error", message: "Error de inicialización: " + err.message });
+      }
+    };
+
+    async function handleMessage(event) {
       let data = {};
       try {
         data = JSON.parse(event.data);
@@ -77,25 +115,35 @@ const WEBVIEW_HTML = `
 
       if (data.action === "sendOtp") {
         try {
-          confirmationResult = await auth.signInWithPhoneNumber(data.phone, window.recaptchaVerifier);
+          updateStatus("Solicitando envío de SMS...", "Enviando Código...");
+          confirmationResult = await authInstance.signInWithPhoneNumber(data.phone, recaptchaVerifierInstance);
+          updateStatus("Código SMS enviado correctamente.", "Código Enviado");
           sendToNative({ action: "otpSent" });
         } catch (err) {
+          updateStatus("Error: " + err.message, "Error al Enviar");
           sendToNative({ action: "error", message: err.message });
         }
       } else if (data.action === "verifyOtp") {
         try {
           if (!confirmationResult) {
-            sendToNative({ action: "error", message: "No hay sesión de verificación activa" });
+            sendToNative({ action: "error", message: "No hay sesión de SMS activa." });
             return;
           }
+          updateStatus("Verificando código de seguridad...", "Verificando...");
           const userCredential = await confirmationResult.confirm(data.code);
           const verifiedPhone = userCredential.user.phoneNumber;
+          updateStatus("Verificado correctamente.", "¡Éxito!");
           sendToNative({ action: "verified", phone: verifiedPhone });
         } catch (err) {
-          sendToNative({ action: "error", message: err.message });
+          updateStatus("Código incorrecto o expirado.", "Verificación Fallida");
+          sendToNative({ action: "error", message: "Código inválido o expirado. Inténtalo de nuevo." });
         }
       }
-    });
+    }
+
+    // Escuchar mensajes de React Native (soporte Android e iOS)
+    window.addEventListener("message", handleMessage);
+    document.addEventListener("message", handleMessage);
   </script>
 </body>
 </html>
@@ -175,7 +223,10 @@ export default function LoginScreen() {
       return;
     }
 
-    if (data.action === "otpSent") {
+    if (data.action === "ready") {
+      // WebView está inicializado y reCAPTCHA listo en pantalla. Ahora enviamos el teléfono para gatillar el SMS.
+      webViewRef.current?.postMessage(JSON.stringify({ action: "sendOtp", phone: formattedPhoneState }));
+    } else if (data.action === "otpSent") {
       setRecaptchaVisible(false);
       setLoading(false);
       setOtpModal(true);
@@ -523,9 +574,6 @@ export default function LoginScreen() {
               ref={webViewRef}
               source={{ html: WEBVIEW_HTML }}
               onMessage={handleWebViewMessage}
-              onLoadEnd={() => {
-                webViewRef.current?.postMessage(JSON.stringify({ action: "sendOtp", phone: formattedPhoneState }));
-              }}
               javaScriptEnabled
               style={{ flex: 1 }}
             />
