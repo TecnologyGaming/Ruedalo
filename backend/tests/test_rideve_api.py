@@ -66,9 +66,10 @@ def test_seed_users_exist(admin_auth):
 # ---------- Auth ----------
 def test_register_and_me():
     email = f"test_{uuid.uuid4().hex[:8]}@rideve.com"
+    phone = f"0414-{uuid.uuid4().hex[:7]}"  # Generate unique phone
     r = requests.post(f"{API}/auth/register", json={
         "email": email, "password": "Pass1234!", "name": "Test User",
-        "phone": "0414-9999999", "role": "passenger",
+        "phone": phone, "role": "passenger",
     }, timeout=15)
     assert r.status_code == 200, r.text
     tok = r.json()["access_token"]
@@ -175,9 +176,10 @@ def test_estimate(passenger_auth):
 def test_insufficient_balance_402():
     # fresh passenger with $0 balance
     email = f"poor_{uuid.uuid4().hex[:6]}@rideve.com"
+    phone = f"0414-{uuid.uuid4().hex[:7]}"  # Generate unique phone
     r = requests.post(f"{API}/auth/register", json={
         "email": email, "password": "Pass1234!", "name": "Poor",
-        "phone": "0414-0000000", "role": "passenger",
+        "phone": phone, "role": "passenger",
     }, timeout=10)
     tok = r.json()["access_token"]
     r = requests.post(f"{API}/rides/request", headers=H(tok), json={
@@ -434,9 +436,10 @@ def test_register_with_referral_code():
     """Test user registration with a valid referral code"""
     # First, create a referrer
     referrer_email = f"referrer_{uuid.uuid4().hex[:6]}@rideve.com"
+    referrer_phone = f"0414-{uuid.uuid4().hex[:7]}"
     r1 = requests.post(f"{API}/auth/register", json={
         "email": referrer_email, "password": "Pass1234!", "name": "Maria Referrer",
-        "phone": "0414-1111111", "role": "passenger",
+        "phone": referrer_phone, "role": "passenger",
     }, timeout=15)
     assert r1.status_code == 200
     referrer_data = r1.json()
@@ -446,9 +449,10 @@ def test_register_with_referral_code():
     
     # Now register a new user with the referral code
     referred_email = f"referred_{uuid.uuid4().hex[:6]}@rideve.com"
+    referred_phone = f"0414-{uuid.uuid4().hex[:7]}"
     r2 = requests.post(f"{API}/auth/register", json={
         "email": referred_email, "password": "Pass1234!", "name": "Juan Referred",
-        "phone": "0414-2222222", "role": "passenger",
+        "phone": referred_phone, "role": "passenger",
         "referred_by_code": referrer_code,
     }, timeout=15)
     assert r2.status_code == 200
@@ -466,9 +470,10 @@ def test_referral_code_generation():
     codes = set()
     for i in range(3):
         email = f"refcode_{uuid.uuid4().hex[:6]}@rideve.com"
+        phone = f"0414-{uuid.uuid4().hex[:7]}"  # Generate unique phone
         r = requests.post(f"{API}/auth/register", json={
             "email": email, "password": "Pass1234!", "name": f"User {i}",
-            "phone": f"0414-{i:07d}", "role": "passenger",
+            "phone": phone, "role": "passenger",
         }, timeout=15)
         assert r.status_code == 200
         code = r.json()["user"]["referral_code"]
@@ -485,18 +490,20 @@ def test_referral_bonus_on_first_ride():
     
     # Create referrer
     referrer_email = f"ref_bonus_{uuid.uuid4().hex[:6]}@rideve.com"
+    referrer_phone = f"0414-{uuid.uuid4().hex[:7]}"
     r1 = requests.post(f"{API}/auth/register", json={
         "email": referrer_email, "password": "Pass1234!", "name": "Ana Referrer",
-        "phone": "0414-3333333", "role": "passenger",
+        "phone": referrer_phone, "role": "passenger",
     }, timeout=20)
     assert r1.status_code == 200
     referrer_code = r1.json()["user"]["referral_code"]
     
     # Create referred user with referral code
     referred_email = f"ref_user_{uuid.uuid4().hex[:6]}@rideve.com"
+    referred_phone = f"0414-{uuid.uuid4().hex[:7]}"
     r2 = requests.post(f"{API}/auth/register", json={
         "email": referred_email, "password": "Pass1234!", "name": "Pedro Referred",
-        "phone": "0414-4444444", "role": "passenger",
+        "phone": referred_phone, "role": "passenger",
         "referred_by_code": referrer_code,
     }, timeout=20)
     assert r2.status_code == 200
@@ -515,9 +522,10 @@ def test_streak_bonus_after_5_rides():
     # when a passenger completes their 5th ride (completed_rides_count reaches 5)
     
     email = f"streak_{uuid.uuid4().hex[:6]}@rideve.com"
+    phone = f"0414-{uuid.uuid4().hex[:7]}"
     r = requests.post(f"{API}/auth/register", json={
         "email": email, "password": "Pass1234!", "name": "Streak User",
-        "phone": "0414-6666666", "role": "passenger",
+        "phone": phone, "role": "passenger",
     }, timeout=20)
     assert r.status_code == 200
     user = r.json()["user"]
@@ -534,9 +542,10 @@ def test_streak_bonus_after_5_rides():
 def test_welcome_bonus_transaction():
     """Test that welcome bonus creates a wallet transaction"""
     email = f"welcome_{uuid.uuid4().hex[:6]}@rideve.com"
+    phone = f"0414-{uuid.uuid4().hex[:7]}"
     r = requests.post(f"{API}/auth/register", json={
         "email": email, "password": "Pass1234!", "name": "Welcome User",
-        "phone": "0414-7777777", "role": "passenger",
+        "phone": phone, "role": "passenger",
     }, timeout=15)
     assert r.status_code == 200
     tok = r.json()["access_token"]
@@ -546,6 +555,122 @@ def test_welcome_bonus_transaction():
     welcome_txns = [t for t in history if t.get("type") == "bonus" and "Bienvenida" in t.get("description", "")]
     assert len(welcome_txns) == 1
     assert welcome_txns[0]["amount"] == 1.5
+
+
+# ---------- Phone Normalization and Uniqueness Tests ----------
+def test_phone_normalization_different_formats():
+    """Test that different phone formats are normalized to the same value"""
+    # Register with one format
+    base_phone = "4145551234"  # Normalized format
+    email1 = f"phone1_{uuid.uuid4().hex[:6]}@rideve.com"
+    
+    # Format 1: With country code and dashes
+    r1 = requests.post(f"{API}/auth/register", json={
+        "email": email1, "password": "Pass1234!", "name": "Phone Test 1",
+        "phone": "+58-414-5551234", "role": "passenger",
+    }, timeout=15)
+    assert r1.status_code == 200, f"First registration failed: {r1.text}"
+    
+    # Format 2: Try to register with same phone but different format (should fail)
+    email2 = f"phone2_{uuid.uuid4().hex[:6]}@rideve.com"
+    r2 = requests.post(f"{API}/auth/register", json={
+        "email": email2, "password": "Pass1234!", "name": "Phone Test 2",
+        "phone": "0414-5551234", "role": "passenger",
+    }, timeout=15)
+    assert r2.status_code == 409, f"Should reject duplicate phone: {r2.text}"
+    assert "Teléfono ya registrado" in r2.json()["detail"]
+    
+    # Format 3: Try with spaces (should also fail)
+    email3 = f"phone3_{uuid.uuid4().hex[:6]}@rideve.com"
+    r3 = requests.post(f"{API}/auth/register", json={
+        "email": email3, "password": "Pass1234!", "name": "Phone Test 3",
+        "phone": "0414 555 1234", "role": "passenger",
+    }, timeout=15)
+    assert r3.status_code == 409, f"Should reject duplicate phone with spaces: {r3.text}"
+    assert "Teléfono ya registrado" in r3.json()["detail"]
+    
+    # Format 4: Try without leading zero (should also fail)
+    email4 = f"phone4_{uuid.uuid4().hex[:6]}@rideve.com"
+    r4 = requests.post(f"{API}/auth/register", json={
+        "email": email4, "password": "Pass1234!", "name": "Phone Test 4",
+        "phone": "4145551234", "role": "passenger",
+    }, timeout=15)
+    assert r4.status_code == 409, f"Should reject duplicate phone without leading zero: {r4.text}"
+    assert "Teléfono ya registrado" in r4.json()["detail"]
+
+
+def test_phone_uniqueness_check():
+    """Test that phone numbers must be unique across all users"""
+    phone = f"0414-{uuid.uuid4().hex[:7]}"
+    
+    # Register first user
+    email1 = f"unique1_{uuid.uuid4().hex[:6]}@rideve.com"
+    r1 = requests.post(f"{API}/auth/register", json={
+        "email": email1, "password": "Pass1234!", "name": "Unique Test 1",
+        "phone": phone, "role": "passenger",
+    }, timeout=15)
+    assert r1.status_code == 200, f"First registration failed: {r1.text}"
+    
+    # Try to register second user with same phone
+    email2 = f"unique2_{uuid.uuid4().hex[:6]}@rideve.com"
+    r2 = requests.post(f"{API}/auth/register", json={
+        "email": email2, "password": "Pass1234!", "name": "Unique Test 2",
+        "phone": phone, "role": "passenger",
+    }, timeout=15)
+    assert r2.status_code == 409, f"Should reject duplicate phone: {r2.text}"
+    assert "Teléfono ya registrado" in r2.json()["detail"]
+
+
+def test_phone_login_with_normalized_phone():
+    """Test that phone login works with different phone formats"""
+    # Register with one format
+    email = f"phonelogin_{uuid.uuid4().hex[:6]}@rideve.com"
+    phone_original = f"0414-{uuid.uuid4().hex[:7]}"
+    
+    r = requests.post(f"{API}/auth/register", json={
+        "email": email, "password": "Pass1234!", "name": "Phone Login Test",
+        "phone": phone_original, "role": "passenger",
+    }, timeout=15)
+    assert r.status_code == 200, f"Registration failed: {r.text}"
+    user_id = r.json()["user"]["id"]
+    
+    # Login with different format (without dashes)
+    phone_no_dash = phone_original.replace("-", "")
+    r2 = requests.post(f"{API}/auth/phone-login", json={
+        "phone": phone_no_dash,
+    }, timeout=15)
+    assert r2.status_code == 200, f"Phone login failed: {r2.text}"
+    assert r2.json()["user"]["id"] == user_id, "Should login to the same user"
+    
+    # Login with +58 prefix
+    phone_with_prefix = f"+58{phone_no_dash[1:]}"  # Remove leading 0 and add +58
+    r3 = requests.post(f"{API}/auth/phone-login", json={
+        "phone": phone_with_prefix,
+    }, timeout=15)
+    assert r3.status_code == 200, f"Phone login with +58 failed: {r3.text}"
+    assert r3.json()["user"]["id"] == user_id, "Should login to the same user"
+
+
+def test_phone_normalization_with_country_code():
+    """Test that +58 country code is properly handled"""
+    base_number = f"414{uuid.uuid4().hex[:7]}"
+    
+    # Register with +58 prefix
+    email1 = f"cc1_{uuid.uuid4().hex[:6]}@rideve.com"
+    r1 = requests.post(f"{API}/auth/register", json={
+        "email": email1, "password": "Pass1234!", "name": "Country Code Test 1",
+        "phone": f"+58{base_number}", "role": "passenger",
+    }, timeout=15)
+    assert r1.status_code == 200, f"Registration with +58 failed: {r1.text}"
+    
+    # Try to register with 0 prefix (should fail - same number)
+    email2 = f"cc2_{uuid.uuid4().hex[:6]}@rideve.com"
+    r2 = requests.post(f"{API}/auth/register", json={
+        "email": email2, "password": "Pass1234!", "name": "Country Code Test 2",
+        "phone": f"0{base_number}", "role": "passenger",
+    }, timeout=15)
+    assert r2.status_code == 409, f"Should reject duplicate phone: {r2.text}"
+    assert "Teléfono ya registrado" in r2.json()["detail"]
 
 
 # ---------- DONATEX Owner Credentials ----------

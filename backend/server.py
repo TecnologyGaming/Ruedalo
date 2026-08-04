@@ -266,6 +266,16 @@ def verify_password(pw: str, hashed: str) -> bool:
     except Exception:
         return False
 
+def clean_phone_for_comparison(p: str) -> str:
+    if not p:
+        return ""
+    p_clean = p.replace("-", "").replace(" ", "").replace("+", "")
+    if p_clean.startswith("58"):
+        p_clean = p_clean[2:]
+    if p_clean.startswith("0"):
+        p_clean = p_clean[1:]
+    return p_clean
+
 def create_token(user_id: str, role: str) -> str:
     exp = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     return jwt.encode({"sub": user_id, "role": role, "exp": exp}, JWT_SECRET, algorithm=JWT_ALGORITHM)
@@ -381,6 +391,7 @@ SEED_DRIVERS = [
 async def seed_initial_data():
     await users_col.create_index("id", unique=True)
     await users_col.create_index("email", unique=True)
+    await users_col.create_index("phone_normalized", unique=True, sparse=True)
     await rides_col.create_index("id", unique=True)
     await recharges_col.create_index("id", unique=True)
     await messages_col.create_index([("ride_id", 1), ("created_at", 1)])
@@ -394,6 +405,7 @@ async def seed_initial_data():
             "email": ADMIN_EMAIL,
             "name": "Administrador",
             "phone": "0000-0000000",
+            "phone_normalized": "00000000000",
             "password_hash": hash_password(ADMIN_PASSWORD),
             "role": "admin",
             "wallet_balance": 0.0,
@@ -410,6 +422,7 @@ async def seed_initial_data():
             "email": "donatex@ruedalo.app",
             "name": "DONATEX",
             "phone": "0414-9999999",
+            "phone_normalized": "4149999999",
             "password_hash": hash_password("Venezuela257#"),
             "role": "admin",
             "wallet_balance": 0.0,
@@ -429,6 +442,7 @@ async def seed_initial_data():
             "email": "pasajero@rideve.com",
             "name": "Luis Pasajero",
             "phone": "0414-1111111",
+            "phone_normalized": "4141111111",
             "password_hash": hash_password("Demo1234!"),
             "role": "passenger",
             "wallet_balance": 25.0,
@@ -445,6 +459,7 @@ async def seed_initial_data():
             "email": "conductor@rideve.com",
             "name": "Ana Conductora",
             "phone": "0414-2222222",
+            "phone_normalized": "4142222222",
             "password_hash": hash_password("Demo1234!"),
             "role": "driver",
             "wallet_balance": 0.0,
@@ -464,6 +479,7 @@ async def seed_initial_data():
                 "email": d["email"],
                 "name": d["name"],
                 "phone": d["phone"],
+                "phone_normalized": clean_phone_for_comparison(d["phone"]),
                 "password_hash": hash_password("Demo1234!"),
                 "role": "driver",
                 "wallet_balance": 0.0,
@@ -515,6 +531,11 @@ async def on_shutdown():
 async def register(body: RegisterIn):
     if await users_col.find_one({"email": body.email}):
         raise HTTPException(status_code=409, detail="Correo ya registrado")
+    
+    clean_phone = clean_phone_for_comparison(body.phone)
+    if await users_col.find_one({"phone_normalized": clean_phone}):
+        raise HTTPException(status_code=409, detail="Teléfono ya registrado")
+        
     user_id = str(uuid.uuid4())
     
     # Generate unique referral code
@@ -538,6 +559,7 @@ async def register(body: RegisterIn):
         "email": body.email,
         "name": body.name,
         "phone": body.phone,
+        "phone_normalized": clean_phone,
         "password_hash": hash_password(body.password) if body.password else "",
         "role": body.role,
         "wallet_balance": welcome_balance,
@@ -586,30 +608,13 @@ async def login(body: LoginIn):
     token = create_token(user["id"], user["role"])
     return TokenOut(access_token=token, user=user_to_out(user))
 
-def clean_phone_for_comparison(p: str) -> str:
-    if not p:
-        return ""
-    p_clean = p.replace("-", "").replace(" ", "").replace("+", "")
-    if p_clean.startswith("58"):
-        p_clean = p_clean[2:]
-    if p_clean.startswith("0"):
-        p_clean = p_clean[1:]
-    return p_clean
-
 @api.post("/auth/phone-login", response_model=TokenOut)
 async def phone_login(body: PhoneLoginIn):
     target_phone = clean_phone_for_comparison(body.phone)
     if not target_phone:
         raise HTTPException(status_code=400, detail="Número de teléfono inválido")
         
-    # Query all users and check their cleaned phone number to find a match
-    users = await users_col.find({}).to_list(None)
-    matched_user = None
-    for u in users:
-        if u.get("phone") and clean_phone_for_comparison(u["phone"]) == target_phone:
-            matched_user = u
-            break
-            
+    matched_user = await users_col.find_one({"phone_normalized": target_phone}, {"_id": 0})
     if not matched_user:
         raise HTTPException(status_code=404, detail="Usuario no registrado. Completa tu registro.")
         
