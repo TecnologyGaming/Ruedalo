@@ -796,45 +796,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
 
-  // Developer Test Panel
-  devPanel: {
-    backgroundColor: colors.elevated,
-    borderRadius: 12,
-    padding: 14,
-    gap: 10,
-    marginBottom: 20,
-  },
-  
-  devPanelTitle: {
-    fontSize: 11,
-    fontFamily: fonts.bodyBold,
-    color: colors.textSecondary,
-    textAlign: "center",
-    letterSpacing: 0.5,
-  },
-  
-  devButtonsRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  
-  devButton: {
-    flex: 1,
-    height: 38,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 999,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  
-  devButtonText: {
-    fontSize: 11,
-    fontFamily: fonts.bodyMedium,
-    color: colors.textPrimary,
-  },
-
   // OTP Modal
   modalOverlay: {
     flex: 1,

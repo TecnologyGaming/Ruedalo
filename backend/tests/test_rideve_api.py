@@ -560,14 +560,15 @@ def test_welcome_bonus_transaction():
 # ---------- Phone Normalization and Uniqueness Tests ----------
 def test_phone_normalization_different_formats():
     """Test that different phone formats are normalized to the same value"""
-    # Register with one format
-    base_phone = "4145551234"  # Normalized format
+    # Generate unique phone number for this test run
+    unique_suffix = uuid.uuid4().hex[:7]
+    base_phone = f"414{unique_suffix}"  # Normalized format
     email1 = f"phone1_{uuid.uuid4().hex[:6]}@rideve.com"
     
     # Format 1: With country code and dashes
     r1 = requests.post(f"{API}/auth/register", json={
         "email": email1, "password": "Pass1234!", "name": "Phone Test 1",
-        "phone": "+58-414-5551234", "role": "passenger",
+        "phone": f"+58-414-{unique_suffix}", "role": "passenger",
     }, timeout=15)
     assert r1.status_code == 200, f"First registration failed: {r1.text}"
     
@@ -575,7 +576,7 @@ def test_phone_normalization_different_formats():
     email2 = f"phone2_{uuid.uuid4().hex[:6]}@rideve.com"
     r2 = requests.post(f"{API}/auth/register", json={
         "email": email2, "password": "Pass1234!", "name": "Phone Test 2",
-        "phone": "0414-5551234", "role": "passenger",
+        "phone": f"0414-{unique_suffix}", "role": "passenger",
     }, timeout=15)
     assert r2.status_code == 409, f"Should reject duplicate phone: {r2.text}"
     assert "Teléfono ya registrado" in r2.json()["detail"]
@@ -584,7 +585,7 @@ def test_phone_normalization_different_formats():
     email3 = f"phone3_{uuid.uuid4().hex[:6]}@rideve.com"
     r3 = requests.post(f"{API}/auth/register", json={
         "email": email3, "password": "Pass1234!", "name": "Phone Test 3",
-        "phone": "0414 555 1234", "role": "passenger",
+        "phone": f"0414 {unique_suffix[:3]} {unique_suffix[3:]}", "role": "passenger",
     }, timeout=15)
     assert r3.status_code == 409, f"Should reject duplicate phone with spaces: {r3.text}"
     assert "Teléfono ya registrado" in r3.json()["detail"]
@@ -593,7 +594,7 @@ def test_phone_normalization_different_formats():
     email4 = f"phone4_{uuid.uuid4().hex[:6]}@rideve.com"
     r4 = requests.post(f"{API}/auth/register", json={
         "email": email4, "password": "Pass1234!", "name": "Phone Test 4",
-        "phone": "4145551234", "role": "passenger",
+        "phone": f"414{unique_suffix}", "role": "passenger",
     }, timeout=15)
     assert r4.status_code == 409, f"Should reject duplicate phone without leading zero: {r4.text}"
     assert "Teléfono ya registrado" in r4.json()["detail"]
