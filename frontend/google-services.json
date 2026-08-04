@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "240937295240",
+    "project_id": "ruedaloapp-8db21",
+    "storage_bucket": "ruedaloapp-8db21.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:240937295240:android:a38d587c5327676289ee3d",
+        "android_client_info": {
+          "package_name": "com.ruedalo.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDDLK65ZSGVU3g-Ny8Cv8_E_XreYwHKBNg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
