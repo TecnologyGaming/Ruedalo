@@ -66,7 +66,6 @@ export default function LoginScreen() {
           (window as any).recaptchaVerifier = recaptcha;
         }
 
-        console.log("Enviando SMS real de Firebase a:", formattedPhone);
         const confirmResult = await signInWithPhoneNumber(auth, formattedPhone, recaptcha);
         setConfirmationResult(confirmResult);
         setLoading(false);
@@ -96,10 +95,8 @@ export default function LoginScreen() {
       try {
         setLoading(true);
         
-        console.log("Verificando código real con Firebase...");
         const userCredential = await confirmationResult.confirm(otpCode);
         const verifiedPhone = userCredential.user.phoneNumber; // ej: +584141234567
-        console.log("Firebase verificado exitosamente:", verifiedPhone);
         
         // Llamar a /auth/phone-login
         try {
