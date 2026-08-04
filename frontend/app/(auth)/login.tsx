@@ -47,12 +47,12 @@ const WEBVIEW_HTML = `
 
   <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyBzsybeLDdXmxiF4jYbt3zYa5N8x1xtKKQ",
+      apiKey: "AIzaSyDkXNCt7wCgpjew66EjbJ6jWR3SkpoE68g",
       authDomain: "ruedaloapp-8db21.firebaseapp.com",
       projectId: "ruedaloapp-8db21",
-      storageBucket: "ruedaloapp-8db21.appspot.com",
-      messagingSenderId: "109884111046",
-      appId: "1:109884111046:web:b5a4b65c45"
+      storageBucket: "ruedaloapp-8db21.firebasestorage.app",
+      messagingSenderId: "240937295240",
+      appId: "1:240937295240:web:7ed992d104198aee89ee3d"
     };
 
     let authInstance = null;
