@@ -2,7 +2,7 @@
 import requests
 import os
 
-BASE = "https://ruedalo-login.preview.emergentagent.com"
+BASE = "https://ruedalo-native-auth.preview.emergentagent.com"
 API = f"{BASE}/api"
 
 # Test credentials from test_credentials.md
