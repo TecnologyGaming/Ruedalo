@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, ActivityIndicator, StatusBar, Image, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -17,11 +17,90 @@ import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 // Import API and setToken helpers
 import { api, setToken } from "@/src/lib/api";
 
+// Import Native Webview for Phone Auth
+import { WebView } from "react-native-webview";
+
 /**
  * 02. BIENVENIDO / LOGIN SCREEN
  * Pixel-Perfect Implementation - Extracted from Official Mockup
  * Target Fidelity: >99%
  */
+const WEBVIEW_HTML = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <style>
+    body { font-family: sans-serif; background-color: #020617; color: #fff; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+    #recaptcha-container { margin: auto; }
+    h3 { margin-bottom: 20px; font-weight: bold; text-align: center; color: #fff; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h3>Verificando que no eres un robot...</h3>
+  <div id="recaptcha-container"></div>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBzsybeLDdXmxiF4jYbt3zYa5N8x1xtKKQ",
+      authDomain: "ruedaloapp-8db21.firebaseapp.com",
+      projectId: "ruedaloapp-8db21",
+      storageBucket: "ruedaloapp-8db21.appspot.com",
+      messagingSenderId: "109884111046",
+      appId: "1:109884111046:web:b5a4b65c45"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    let confirmationResult = null;
+
+    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+      size: 'normal',
+      callback: (response) => {
+        // solved
+      }
+    });
+
+    function sendToNative(data) {
+      window.ReactNativeWebView.postMessage(JSON.stringify(data));
+    }
+
+    window.addEventListener("message", async (event) => {
+      let data = {};
+      try {
+        data = JSON.parse(event.data);
+      } catch (e) {
+        return;
+      }
+
+      if (data.action === "sendOtp") {
+        try {
+          confirmationResult = await auth.signInWithPhoneNumber(data.phone, window.recaptchaVerifier);
+          sendToNative({ action: "otpSent" });
+        } catch (err) {
+          sendToNative({ action: "error", message: err.message });
+        }
+      } else if (data.action === "verifyOtp") {
+        try {
+          if (!confirmationResult) {
+            sendToNative({ action: "error", message: "No hay sesión de verificación activa" });
+            return;
+          }
+          const userCredential = await confirmationResult.confirm(data.code);
+          const verifiedPhone = userCredential.user.phoneNumber;
+          sendToNative({ action: "verified", phone: verifiedPhone });
+        } catch (err) {
+          sendToNative({ action: "error", message: err.message });
+        }
+      }
+    });
+  </script>
+</body>
+</html>
+`;
+
 export default function LoginScreen() {
   const router = useRouter();
   const { setUser } = useAuth();
@@ -35,6 +114,11 @@ export default function LoginScreen() {
   const [otpModal, setOtpModal] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [confirmationResult, setConfirmationResult] = useState<any>(null);
+
+  // WebView Native Recaptcha States
+  const [recaptchaVisible, setRecaptchaVisible] = useState(false);
+  const [formattedPhoneState, setFormattedPhoneState] = useState("");
+  const webViewRef = useRef<WebView | null>(null);
 
   const onSendOtp = async () => {
     if (!phone.trim() || phone.length < 7) {
@@ -50,6 +134,7 @@ export default function LoginScreen() {
         cleanPhone = cleanPhone.substring(1);
       }
       const formattedPhone = `+58${cleanPhone}`;
+      setFormattedPhoneState(formattedPhone);
       
       if (Platform.OS === 'web') {
         let recaptcha = (window as any).recaptchaVerifier;
@@ -72,16 +157,65 @@ export default function LoginScreen() {
         setOtpModal(true);
         toast("Código enviado por SMS real a tu teléfono", "success");
       } else {
-        // En dispositivos móviles nativos usando Firebase Web SDK, el Recaptcha se puede instanciar de forma similar
-        // o mediante un Webview de respaldo. Si se está ejecutando dentro de un APK compilado, el SDK se comunicará
-        // con la red celular. De lo contrario, le indicamos que use la versión Web de producción.
-        toast("Firebase Phone Auth iniciado. Valida en tu navegador o APK de producción.", "info");
-        setLoading(false);
+        // En Android/iOS nativo, abrimos el modal del WebView para resolver reCAPTCHA
+        setRecaptchaVisible(true);
       }
     } catch (e: any) {
       console.error("Firebase Auth Error:", e);
       toast(`Error al enviar SMS real: ${e?.message ?? "Verifica tu configuración de Firebase"}`, "error");
       setLoading(false);
+    }
+  };
+
+  const handleWebViewMessage = async (event: any) => {
+    let data: any = {};
+    try {
+      data = JSON.parse(event.nativeEvent.data);
+    } catch (e) {
+      return;
+    }
+
+    if (data.action === "otpSent") {
+      setRecaptchaVisible(false);
+      setLoading(false);
+      setOtpModal(true);
+      toast("Código enviado por SMS real a tu teléfono", "success");
+    } else if (data.action === "verified") {
+      setOtpModal(false);
+      setLoading(true);
+      
+      // Llamar a /auth/phone-login
+      try {
+        const res = await api<any>("/auth/phone-login", {
+          method: "POST",
+          body: { phone: data.phone },
+          auth: false
+        });
+        
+        await setToken(res.access_token);
+        setUser(res.user);
+        toast(`¡Bienvenido de vuelta a Ruedalo!`, "success");
+        
+        if (res.user.role === "passenger") router.replace("/(passenger)");
+        else if (res.user.role === "driver") router.replace("/(driver)");
+        else router.replace("/(admin)");
+      } catch (apiErr: any) {
+        if (apiErr.status === 404) {
+          toast("Teléfono verificado. Por favor, completa tu registro.", "info");
+          router.push({
+            pathname: "/(auth)/register",
+            params: { phone: data.phone }
+          });
+        } else {
+          toast(apiErr?.message ?? "Error en el servidor de Ruedalo", "error");
+        }
+      } finally {
+        setLoading(false);
+      }
+    } else if (data.action === "error") {
+      setRecaptchaVisible(false);
+      setLoading(false);
+      toast(`Error en autenticación: ${data.message}`, "error");
     }
   };
 
@@ -91,7 +225,7 @@ export default function LoginScreen() {
       return;
     }
 
-    if (confirmationResult) {
+    if (Platform.OS === 'web' && confirmationResult) {
       try {
         setLoading(true);
         
@@ -106,20 +240,16 @@ export default function LoginScreen() {
             auth: false
           });
           
-          // Usuario existe, iniciar sesión normalmente
           await setToken(res.access_token);
           setUser(res.user);
           toast(`¡Bienvenido de vuelta a Ruedalo!`, "success");
           setOtpModal(false);
           
-          // Redirigir de acuerdo al rol
           if (res.user.role === "passenger") router.replace("/(passenger)");
           else if (res.user.role === "driver") router.replace("/(driver)");
           else router.replace("/(admin)");
-          
         } catch (apiErr: any) {
           if (apiErr.status === 404) {
-            // Usuario no existe, redirigir al flujo normal de registro, prellenando el teléfono
             toast("Teléfono verificado. Por favor, completa tu registro.", "info");
             setOtpModal(false);
             router.push({
@@ -135,6 +265,10 @@ export default function LoginScreen() {
       } finally {
         setLoading(false);
       }
+    } else if (Platform.OS !== 'web' && webViewRef.current) {
+      // En dispositivos nativos, enviamos el código ingresado para ser verificado en el WebView
+      setLoading(true);
+      webViewRef.current.postMessage(JSON.stringify({ action: "verifyOtp", code: otpCode.trim() }));
     } else {
       toast("No se ha iniciado la verificación por SMS.", "error");
     }
@@ -374,6 +508,28 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </View>
           </View>
+        </Modal>
+
+        {/* Native WebView reCAPTCHA Modal */}
+        <Modal visible={recaptchaVisible} animationType="slide" onRequestClose={() => { setRecaptchaVisible(false); setLoading(false); }}>
+          <SafeAreaView style={{ flex: 1, backgroundColor: "#020617" }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 16, borderBottomWidth: 1, borderBottomColor: "#1e293b" }}>
+              <Text style={{ color: "#fff", fontFamily: fonts.headingBold, fontSize: 18 }}>Verificación de Teléfono</Text>
+              <TouchableOpacity onPress={() => { setRecaptchaVisible(false); setLoading(false); }}>
+                <X size={26} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            <WebView
+              ref={webViewRef}
+              source={{ html: WEBVIEW_HTML }}
+              onMessage={handleWebViewMessage}
+              onLoadEnd={() => {
+                webViewRef.current?.postMessage(JSON.stringify({ action: "sendOtp", phone: formattedPhoneState }));
+              }}
+              javaScriptEnabled
+              style={{ flex: 1 }}
+            />
+          </SafeAreaView>
         </Modal>
       </SafeAreaView>
     </>
