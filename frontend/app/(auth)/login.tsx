@@ -93,25 +93,30 @@ const WEBVIEW_HTML = `
           action: "debug",
           message: "Antes de firebase.initializeApp",
           diagnostics: {
-            firebaseExists: typeof firebase !== "undefined",
-            appsLength: (typeof firebase !== "undefined" && firebase.apps) ? firebase.apps.length : null,
-            appsLengthCheck: (typeof firebase !== "undefined" && firebase.apps) ? firebase.apps.length > 0 : false,
-            authExists: (typeof firebase !== "undefined" && typeof firebase.auth === "function"),
-            settingsAvailable: (typeof firebase !== "undefined" && typeof firebase.auth === "function" && firebase.auth().settings) ? true : false
+            firebaseConfig: firebaseConfig,
+            typeofFirebase: typeof firebase,
+            appsLength: (typeof firebase !== "undefined" && firebase.apps) ? firebase.apps.length : null
           }
         });
 
-        firebase.initializeApp(firebaseConfig);
+        // Ejecutar con try-catch dedicado
+        try {
+          firebase.initializeApp(firebaseConfig);
+        } catch (initErr) {
+          sendToNative({
+            action: "error",
+            message: "Error ejecutando firebase.initializeApp: " + initErr.message,
+            error: serializeError(initErr)
+          });
+        }
 
         // Enviar diagnóstico posterior
         sendToNative({
           action: "debug",
           message: "Después de inicializar Firebase",
           diagnostics: {
-            appsLength: firebase.apps.length,
-            appsLengthCheck: firebase.apps.length > 0,
-            authExists: typeof firebase.auth === "function",
-            settingsAvailable: (typeof firebase.auth === "function" && firebase.auth().settings) ? true : false
+            appsLength: (typeof firebase !== "undefined" && firebase.apps) ? firebase.apps.length : null,
+            appOptions: (typeof firebase !== "undefined" && firebase.apps && firebase.apps.length > 0) ? firebase.app().options : null
           }
         });
 
