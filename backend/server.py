@@ -436,7 +436,8 @@ async def seed_initial_data():
     logger.info("Seeded DONATEX owner admin account")
 
     # Demo passenger
-    if not await users_col.find_one({"email": "pasajero@rideve.com"}):
+    demo_passenger = await users_col.find_one({"email": "pasajero@rideve.com"})
+    if not demo_passenger:
         await users_col.insert_one({
             "id": str(uuid.uuid4()),
             "email": "pasajero@rideve.com",
@@ -451,6 +452,13 @@ async def seed_initial_data():
             "created_at": utcnow_iso(),
         })
         logger.info("Seeded demo passenger")
+    else:
+        # Reset wallet balance and completed rides count for test repeatability
+        await users_col.update_one(
+            {"id": demo_passenger["id"]},
+            {"$set": {"wallet_balance": 25.0, "completed_rides_count": 0}}
+        )
+        logger.info("Reset demo passenger wallet balance")
 
     # Demo driver (main one for manual testing)
     if not await users_col.find_one({"email": "conductor@rideve.com"}):
