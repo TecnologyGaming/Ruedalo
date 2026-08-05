@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, ActivityIndicator, StatusBar, Image, Platform } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, ActivityIndicator, StatusBar, Image, Platform, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
@@ -280,7 +280,13 @@ export default function LoginScreen() {
       return;
     }
 
-    if (data.action === "ready") {
+    if (data.action === "debug") {
+      console.log(`[WebView Debug] ${data.message}`);
+      console.log(data.diagnostics);
+      
+      const debugInfo = `Mensaje: ${data.message}\nDiagnósticos:\n${JSON.stringify(data.diagnostics, null, 2)}`;
+      Alert.alert("Diagnóstico WebView", debugInfo, [{ text: "Aceptar" }]);
+    } else if (data.action === "ready") {
       // WebView está inicializado y reCAPTCHA listo en pantalla. Ahora enviamos el teléfono para gatillar el SMS.
       webViewRef.current?.postMessage(JSON.stringify({ action: "sendOtp", phone: formattedPhoneState }));
     } else if (data.action === "otpSent") {
@@ -323,6 +329,33 @@ export default function LoginScreen() {
     } else if (data.action === "error") {
       setRecaptchaVisible(false);
       setLoading(false);
+      
+      // Registrar todo detalladamente en la consola
+      console.log("=== WEBVIEW FIREBASE ERROR DATA ===");
+      console.log(data);
+      if (data.error) {
+        console.log("=== SERIALIZED ERROR ===");
+        console.log("Message:", data.error.message);
+        console.log("Code:", data.error.code);
+        console.log("Name:", data.error.name);
+        console.log("Stack:", data.error.stack);
+      }
+      if (data.diagnostics) {
+        console.log("=== ERROR DIAGNOSTICS ===");
+        console.log(data.diagnostics);
+      }
+
+      // Preparar string amigable de diagnóstico para mostrar en pantalla
+      let debugText = `Msg: ${data.message || "N/A"}\n\n`;
+      if (data.error) {
+        debugText += `Error: ${data.error.name || "Error"} (${data.error.code || "No Code"})\nDetail: ${data.error.message || "N/A"}\n`;
+        if (data.error.stack) {
+          debugText += `Stack: ${data.error.stack.substring(0, 150)}...\n`;
+        }
+      }
+      
+      // Mostrar alerta visual directa en la pantalla del APK
+      Alert.alert("Error de Autenticación", debugText, [{ text: "Entendido" }]);
       toast(`Error en autenticación: ${data.message}`, "error");
     }
   };
