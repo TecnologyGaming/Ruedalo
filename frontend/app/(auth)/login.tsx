@@ -68,6 +68,16 @@ const WEBVIEW_HTML = `
       }
     }
 
+    function serializeError(err) {
+      if (!err) return null;
+      return {
+        message: err.message || String(err),
+        code: err.code || err.errorCode || null,
+        name: err.name || null,
+        stack: err.stack || null
+      };
+    }
+
     function updateStatus(text, header) {
       document.getElementById("status").innerText = text;
       if (header) {
@@ -78,9 +88,44 @@ const WEBVIEW_HTML = `
     // Inicializar todo al cargar la página
     window.onload = function() {
       try {
+        // Enviar diagnóstico previo
+        sendToNative({
+          action: "debug",
+          message: "Antes de firebase.initializeApp",
+          diagnostics: {
+            firebaseExists: typeof firebase !== "undefined",
+            appsLength: (typeof firebase !== "undefined" && firebase.apps) ? firebase.apps.length : null,
+            appsLengthCheck: (typeof firebase !== "undefined" && firebase.apps) ? firebase.apps.length > 0 : false,
+            authExists: (typeof firebase !== "undefined" && typeof firebase.auth === "function"),
+            settingsAvailable: (typeof firebase !== "undefined" && typeof firebase.auth === "function" && firebase.auth().settings) ? true : false
+          }
+        });
+
         firebase.initializeApp(firebaseConfig);
+
+        // Enviar diagnóstico posterior
+        sendToNative({
+          action: "debug",
+          message: "Después de inicializar Firebase",
+          diagnostics: {
+            appsLength: firebase.apps.length,
+            appsLengthCheck: firebase.apps.length > 0,
+            authExists: typeof firebase.auth === "function",
+            settingsAvailable: (typeof firebase.auth === "function" && firebase.auth().settings) ? true : false
+          }
+        });
+
         authInstance = firebase.auth();
         updateStatus("Iniciando verificador de reCAPTCHA...");
+
+        // Enviar diagnóstico antes de RecaptchaVerifier
+        sendToNative({
+          action: "debug",
+          message: "Antes de crear RecaptchaVerifier",
+          diagnostics: {
+            recaptchaVerifierExists: typeof firebase.auth.RecaptchaVerifier === "function"
+          }
+        });
 
         recaptchaVerifierInstance = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
           size: 'normal',
@@ -97,11 +142,19 @@ const WEBVIEW_HTML = `
           // Notificar a React Native que Firebase y reCAPTCHA están listos
           sendToNative({ action: "ready" });
         }).catch((err) => {
-          sendToNative({ action: "error", message: "Error al renderizar reCAPTCHA: " + err.message });
+          sendToNative({
+            action: "error",
+            message: "Error al renderizar reCAPTCHA: " + err.message,
+            error: serializeError(err)
+          });
         });
 
       } catch (err) {
-        sendToNative({ action: "error", message: "Error de inicialización: " + err.message });
+        sendToNative({
+          action: "error",
+          message: "Error de inicialización: " + err.message,
+          error: serializeError(err)
+        });
       }
     };
 
@@ -121,7 +174,11 @@ const WEBVIEW_HTML = `
           sendToNative({ action: "otpSent" });
         } catch (err) {
           updateStatus("Error: " + err.message, "Error al Enviar");
-          sendToNative({ action: "error", message: err.message });
+          sendToNative({
+            action: "error",
+            message: err.message,
+            error: serializeError(err)
+          });
         }
       } else if (data.action === "verifyOtp") {
         try {
