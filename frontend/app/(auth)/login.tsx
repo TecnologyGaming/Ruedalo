@@ -11,7 +11,7 @@ import { Phone, Shield, ArrowRight, X, User, ChevronRight, Check } from "lucide-
 import { RuedaloArrowLogo, SteeringWheelIcon, GoogleLogo, AppleLogo, FacebookLogo, BriefcaseIcon } from "@/src/components/RuedaloIcons";
 
 // Import Firebase real phone auth modules
-import { getAuth, signInWithPhoneNumber } from "@/src/utils/firebaseAuthHelper";
+import { getAuth, verifyPhoneNumber, PhoneAuthProvider, signInWithCredential } from "@/src/utils/firebaseAuthHelper";
 
 // Import API and setToken helpers
 import { api, setToken } from "@/src/lib/api";
@@ -35,7 +35,40 @@ export default function LoginScreen() {
   // Phone OTP verification modal state
   const [otpModal, setOtpModal] = useState(false);
   const [otpCode, setOtpCode] = useState("");
-  const [confirmationResult, setConfirmationResult] = useState<any>(null);
+  const [verificationId, setVerificationId] = useState<string | null>(null);
+
+  const handleBackendPhoneLogin = async (verifiedPhone: string) => {
+    setLoading(true);
+    try {
+      const res = await api<any>("/auth/phone-login", {
+        method: "POST",
+        body: { phone: verifiedPhone },
+        auth: false
+      });
+      
+      await setToken(res.access_token);
+      setUser(res.user);
+      toast(`¡Bienvenido de vuelta a Ruedalo!`, "success");
+      setOtpModal(false);
+      
+      if (res.user.role === "passenger") router.replace("/(passenger)");
+      else if (res.user.role === "driver") router.replace("/(driver)");
+      else router.replace("/(admin)");
+    } catch (apiErr: any) {
+      if (apiErr.status === 404) {
+        toast("Teléfono verificado. Por favor, completa tu registro.", "info");
+        setOtpModal(false);
+        router.push({
+          pathname: "/(auth)/register",
+          params: { phone: verifiedPhone }
+        });
+      } else {
+        toast(apiErr?.message ?? "Error en el servidor de Ruedalo", "error");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const onSendOtp = async () => {
     if (!phone.trim() || phone.length < 7) {
@@ -53,18 +86,46 @@ export default function LoginScreen() {
       const formattedPhone = `+58${cleanPhone}`;
       
       if (Platform.OS === 'web') {
+        console.log("[Firebase Auth] Web platform detected - SMS is only supported in native APK.");
         toast("SMS no soportado en Web. Por favor, prueba en la APK nativa.", "error");
         setLoading(false);
       } else {
-        // En Android/iOS nativo, utilizamos la API modular nativa de Firebase Auth
-        const confirmResult = await signInWithPhoneNumber(getAuth(), formattedPhone);
-        setConfirmationResult(confirmResult);
-        setLoading(false);
-        setOtpModal(true);
-        toast("Código enviado por SMS nativo a tu teléfono", "success");
+        console.log("[Firebase Auth] verifyPhoneNumber started for phone:", formattedPhone);
+        
+        verifyPhoneNumber(getAuth(), formattedPhone)
+          .on('state_changed', async (snapshot: any) => {
+            console.log("[Firebase Auth] Native state changed:", snapshot.state);
+            
+            if (snapshot.state === 'sent' || snapshot.state === 'code_sent') {
+              console.log("[Firebase Auth] sent - verificationId received:", snapshot.verificationId);
+              setVerificationId(snapshot.verificationId);
+              setLoading(false);
+              setOtpModal(true);
+              toast("Código enviado por SMS nativo a tu teléfono", "success");
+            } 
+            else if (snapshot.state === 'verified' || snapshot.state === 'auto_verified') {
+              console.log("[Firebase Auth] verified - Auto-verification succeeded!");
+              console.log("[Firebase Auth] credential created automatically");
+              const credential = PhoneAuthProvider.credential(snapshot.verificationId, snapshot.code);
+              
+              const userCredential = await signInWithCredential(getAuth(), credential);
+              console.log("[Firebase Auth] signInWithCredential success for user:", userCredential.user?.phoneNumber);
+              
+              await handleBackendPhoneLogin(userCredential.user?.phoneNumber || formattedPhone);
+            }
+            else if (snapshot.state === 'timeout' || snapshot.state === 'auto_verify_timeout') {
+              console.log("[Firebase Auth] timeout - Auto-verification timed out, code must be entered manually");
+              toast("Expiró el tiempo de verificación automática. Introduce el código manualmente.", "info");
+            }
+          }, (error: any) => {
+            console.log("[Firebase Auth] error occurred:", error);
+            console.error(error);
+            toast(`Error de Firebase: ${error.message}`, "error");
+            setLoading(false);
+          });
       }
     } catch (e: any) {
-      console.error("Firebase Auth Error:", e);
+      console.error("[Firebase Auth] verifyPhoneNumber failed to start:", e);
       toast(`Error al enviar SMS: ${e?.message ?? "Verifica tu configuración de Firebase"}`, "error");
       setLoading(false);
     }
@@ -76,54 +137,30 @@ export default function LoginScreen() {
       return;
     }
 
+    if (!verificationId) {
+      toast("No hay sesión de SMS activa.", "error");
+      return;
+    }
+
     setLoading(true);
     try {
-      let verifiedPhone = "";
-      if (Platform.OS === 'web') {
-        toast("SMS no soportado en Web. Por favor, prueba en la APK nativa.", "error");
-        setLoading(false);
-        return;
-      } else if (confirmationResult) {
-        // En Android/iOS nativo, usamos el método confirm nativo del SDK de Firebase
-        const userCredential = await confirmationResult.confirm(otpCode);
-        verifiedPhone = userCredential.user.phoneNumber;
-      } else {
-        toast("No hay sesión de SMS activa.", "error");
-        setLoading(false);
-        return;
+      console.log("[Firebase Auth] Manual verification: creating credential...");
+      const credential = PhoneAuthProvider.credential(verificationId, otpCode.trim());
+      console.log("[Firebase Auth] credential created");
+
+      console.log("[Firebase Auth] Signing in with credential...");
+      const userCredential = await signInWithCredential(getAuth(), credential);
+      console.log("[Firebase Auth] signInWithCredential success for user:", userCredential.user?.phoneNumber);
+
+      const verifiedPhone = userCredential.user?.phoneNumber;
+      if (!verifiedPhone) {
+        throw new Error("No se pudo obtener el número verificado de Firebase");
       }
 
-      // Llamar a /auth/phone-login
-      try {
-        const res = await api<any>("/auth/phone-login", {
-          method: "POST",
-          body: { phone: verifiedPhone },
-          auth: false
-        });
-        
-        await setToken(res.access_token);
-        setUser(res.user);
-        toast(`¡Bienvenido de vuelta a Ruedalo!`, "success");
-        setOtpModal(false);
-        
-        if (res.user.role === "passenger") router.replace("/(passenger)");
-        else if (res.user.role === "driver") router.replace("/(driver)");
-        else router.replace("/(admin)");
-      } catch (apiErr: any) {
-        if (apiErr.status === 404) {
-          toast("Teléfono verificado. Por favor, completa tu registro.", "info");
-          setOtpModal(false);
-          router.push({
-            pathname: "/(auth)/register",
-            params: { phone: verifiedPhone }
-          });
-        } else {
-          toast(apiErr?.message ?? "Error en el servidor de Ruedalo", "error");
-        }
-      }
+      await handleBackendPhoneLogin(verifiedPhone);
     } catch (e: any) {
+      console.error("[Firebase Auth] Verification failed:", e);
       toast(`Código de verificación inválido: ${e?.message}`, "error");
-    } finally {
       setLoading(false);
     }
   };
