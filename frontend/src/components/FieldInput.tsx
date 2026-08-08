@@ -5,14 +5,16 @@ import { colors, fonts, radii } from "@/src/lib/theme";
 interface Props extends TextInputProps {
   label?: string;
   error?: string;
+  leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
 }
 
-export function FieldInput({ label, error, rightIcon, style, ...props }: Props) {
+export function FieldInput({ label, error, leftIcon, rightIcon, style, ...props }: Props) {
   return (
     <View style={styles.wrap}>
       {label && <Text style={styles.label}>{label}</Text>}
       <View style={[styles.field, error ? styles.fieldError : null]}>
+        {leftIcon && <View style={{ marginRight: 8 }}>{leftIcon}</View>}
         <TextInput
           placeholderTextColor={colors.textMuted}
           style={[styles.input, style]}

@@ -6,6 +6,8 @@ export const colors = {
   primaryDim: "#0B132B",    // Azul medianoche (texto "Ruedalo")
   primarySlogan: "#2E62FF", // Azul del slogan "Muévete contigo"
   secondary: "#2E62FF",     // Color secundario
+  secondaryDim: "#1D4ED8",
+  tertiary: "#3B82F6",
   success: "#10B981",       // Energetic Emerald Green
   successDim: "#059669",
   warning: "#F59E0B",
@@ -76,4 +78,20 @@ export const shadows = {
     shadowOffset: { width: 0, height: 6 },
     elevation: 4,
   },
+  neonPrimary: {
+    shadowColor: "#0066FF",
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 5,
+  },
+  neonSecondary: {
+    shadowColor: "#2E62FF",
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 5,
+  },
 };
+
+export const darkMapStyle: any[] = [];

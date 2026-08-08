@@ -15,6 +15,15 @@ export interface User {
   lat?: number | null;
   lng?: number | null;
   rating_avg?: number;
+  cedula?: string;
+  profile_pic?: string;
+  completed_rides_count?: number;
+  driver_status?: string;
+  is_verified?: boolean;
+  referral_code?: string;
+  vehicle_model?: string;
+  vehicle_year?: string;
+  plate?: string;
 }
 
 interface AuthCtx {

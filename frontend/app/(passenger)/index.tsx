@@ -6,6 +6,7 @@ import * as Location from "expo-location";
 import { MapPin, Navigation, Search, Star, Wallet as WalletIcon, X, Shield, ShieldCheck, Heart, Info, ChevronRight, User, Phone, Check, CreditCard, MessageSquare, Bike, Car, Sparkles, Package, Home, Briefcase, Clock, AlertTriangle, HelpCircle, Bell } from "lucide-react-native";
 
 import { useAuth } from "@/src/lib/auth";
+import { api } from "@/src/lib/api";
 import { colors, fonts, radii, spacing, shadows } from "@/src/lib/theme";
 import { RideMap, MarkerData } from "@/src/components/RideMap";
 import { FieldInput } from "@/src/components/FieldInput";
@@ -907,7 +908,7 @@ const styles = StyleSheet.create({
 
   // Activity cards (03. HOME - Viajes / Envíos)
   activitySelectionContainer: { flexDirection: "row", gap: 12, marginVertical: 8 },
-  activityCard: { flex: 1, flexDirection: "row", backgroundColor: colors.bg, borderWidth: 1.5, borderColor: colors.border, borderRadius: radii.lg, padding: 14, alignItems: "center", justifySpace: "space-between", ...shadows.card },
+  activityCard: { flex: 1, flexDirection: "row", backgroundColor: colors.bg, borderWidth: 1.5, borderColor: colors.border, borderRadius: radii.lg, padding: 14, alignItems: "center", justifyContent: "space-between", ...shadows.card },
   activityCardActive: { borderColor: colors.primary, backgroundColor: "#EFF6FF" },
   activityTextCol: { flex: 1, gap: 4 },
   activityTitle: { color: colors.textPrimary, fontFamily: fonts.headingBold, fontSize: 15 },
@@ -1022,7 +1023,7 @@ const styles = StyleSheet.create({
   toggleHandle: { width: 20, height: 20, borderRadius: 999, backgroundColor: "#FFFFFF" },
   toggleHandleActive: { alignSelf: "flex-end" },
   otherPersonInputBox: { gap: 8, backgroundColor: colors.bg, borderRadius: radii.md, padding: 12, borderWidth: 1, borderColor: colors.border, marginTop: 4 },
-  otherPersonInput: { height: 38, backgroundColor: colors.surface, borderWith: 1, borderColor: colors.border, borderRadius: radii.sm, paddingHorizontal: 12, color: colors.textPrimary, fontFamily: fonts.bodyMedium, fontSize: 12, borderWidth: 1 },
+  otherPersonInput: { height: 38, backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radii.sm, paddingHorizontal: 12, color: colors.textPrimary, fontFamily: fonts.bodyMedium, fontSize: 12, borderWidth: 1 },
 
   modalDoneBtn: { backgroundColor: colors.primary, height: 48, borderRadius: radii.xl, alignItems: "center", justifyContent: "center", marginTop: 10, marginBottom: 20, ...shadows.neonPrimary },
   modalDoneBtnTxt: { color: "#fff", fontFamily: fonts.bodyBold, fontSize: 15 },
