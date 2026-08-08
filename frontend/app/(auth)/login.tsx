@@ -11,7 +11,7 @@ import { Phone, Shield, ArrowRight, X, User, ChevronRight, Check } from "lucide-
 import { RuedaloArrowLogo, SteeringWheelIcon, GoogleLogo, AppleLogo, FacebookLogo, BriefcaseIcon } from "@/src/components/RuedaloIcons";
 
 // Import Firebase real phone auth modules
-import nativeAuth from "@/src/utils/nativeAuth";
+import { getAuth, signInWithPhoneNumber } from "@/src/utils/firebaseAuthHelper";
 
 // Import API and setToken helpers
 import { api, setToken } from "@/src/lib/api";
@@ -56,8 +56,8 @@ export default function LoginScreen() {
         toast("SMS no soportado en Web. Por favor, prueba en la APK nativa.", "error");
         setLoading(false);
       } else {
-        // En Android/iOS nativo, utilizamos el SDK nativo directo de Firebase Auth sin WebView
-        const confirmResult = await nativeAuth().signInWithPhoneNumber(formattedPhone);
+        // En Android/iOS nativo, utilizamos la API modular nativa de Firebase Auth
+        const confirmResult = await signInWithPhoneNumber(getAuth(), formattedPhone);
         setConfirmationResult(confirmResult);
         setLoading(false);
         setOtpModal(true);
