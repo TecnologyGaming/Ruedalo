@@ -11,9 +11,7 @@ import { Phone, Shield, ArrowRight, X, User, ChevronRight, Check } from "lucide-
 import { RuedaloArrowLogo, SteeringWheelIcon, GoogleLogo, AppleLogo, FacebookLogo, BriefcaseIcon } from "@/src/components/RuedaloIcons";
 
 // Import Firebase real phone auth modules
-import { auth } from "@/src/lib/firebase";
-import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
-import nativeAuth from "@react-native-firebase/auth";
+import nativeAuth from "@/src/utils/nativeAuth";
 
 // Import API and setToken helpers
 import { api, setToken } from "@/src/lib/api";
@@ -55,25 +53,8 @@ export default function LoginScreen() {
       const formattedPhone = `+58${cleanPhone}`;
       
       if (Platform.OS === 'web') {
-        let recaptcha = (window as any).recaptchaVerifier;
-        if (!recaptcha) {
-          let el = document.getElementById("recaptcha-container");
-          if (!el) {
-            el = document.createElement("div");
-            el.id = "recaptcha-container";
-            document.body.appendChild(el);
-          }
-          recaptcha = new RecaptchaVerifier(auth, 'recaptcha-container', {
-            size: 'invisible'
-          });
-          (window as any).recaptchaVerifier = recaptcha;
-        }
-
-        const confirmResult = await signInWithPhoneNumber(auth, formattedPhone, recaptcha);
-        setConfirmationResult(confirmResult);
+        toast("SMS no soportado en Web. Por favor, prueba en la APK nativa.", "error");
         setLoading(false);
-        setOtpModal(true);
-        toast("Código enviado por SMS real a tu teléfono", "success");
       } else {
         // En Android/iOS nativo, utilizamos el SDK nativo directo de Firebase Auth sin WebView
         const confirmResult = await nativeAuth().signInWithPhoneNumber(formattedPhone);
@@ -98,10 +79,11 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       let verifiedPhone = "";
-      if (Platform.OS === 'web' && confirmationResult) {
-        const userCredential = await confirmationResult.confirm(otpCode);
-        verifiedPhone = userCredential.user.phoneNumber;
-      } else if (Platform.OS !== 'web' && confirmationResult) {
+      if (Platform.OS === 'web') {
+        toast("SMS no soportado en Web. Por favor, prueba en la APK nativa.", "error");
+        setLoading(false);
+        return;
+      } else if (confirmationResult) {
         // En Android/iOS nativo, usamos el método confirm nativo del SDK de Firebase
         const userCredential = await confirmationResult.confirm(otpCode);
         verifiedPhone = userCredential.user.phoneNumber;

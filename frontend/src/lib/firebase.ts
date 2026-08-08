@@ -1,9 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { initializeAuth, getReactNativePersistence, getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
-import { Platform } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || "AIzaSyDkXNCt7wCgpjew66EjbJ6jWR3SkpoE68g",
@@ -17,17 +14,19 @@ const firebaseConfig = {
 // Inicializar Firebase App de forma única
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Inicializar Autenticación de forma multiplataforma
-const auth = Platform.OS === "web"
-  ? getAuth(app)
-  : initializeAuth(app, {
-      persistence: getReactNativePersistence(AsyncStorage)
-    });
-
 // Inicializar Firestore
 const db = getFirestore(app);
 
 // Inicializar Storage
 const storage = getStorage(app);
+
+// Stub de autenticación web para evitar el dual-package hazard de Metro en la vista previa del navegador
+const auth = {
+  settings: {},
+  signOut: async () => {},
+  onAuthStateChanged: (cb: any) => {
+    return () => {};
+  }
+};
 
 export { app, auth, db, storage };
