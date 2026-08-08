@@ -59,6 +59,17 @@
           "resizeMode": "contain",
           "backgroundColor": "#0B132B"
         }
+      ],
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static",
+            "forceStaticLinking": ["RNFBApp", "RNFBAuth"]
+          }
+        }
       ]
     ],
     "experiments": {

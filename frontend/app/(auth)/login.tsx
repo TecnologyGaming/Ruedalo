@@ -1,5 +1,5 @@
-import React, { useState, useRef } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, ActivityIndicator, StatusBar, Image, Platform, Alert } from "react-native";
+import React, { useState } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, ActivityIndicator, StatusBar, Image, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
@@ -13,203 +13,17 @@ import { RuedaloArrowLogo, SteeringWheelIcon, GoogleLogo, AppleLogo, FacebookLog
 // Import Firebase real phone auth modules
 import { auth } from "@/src/lib/firebase";
 import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
+import nativeAuth from "@react-native-firebase/auth";
 
 // Import API and setToken helpers
 import { api, setToken } from "@/src/lib/api";
-
-// Import Native Webview for Phone Auth
-import { WebView } from "react-native-webview";
 
 /**
  * 02. BIENVENIDO / LOGIN SCREEN
  * Pixel-Perfect Implementation - Extracted from Official Mockup
  * Target Fidelity: >99%
  */
-const WEBVIEW_HTML = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-  <style>
-    body { font-family: sans-serif; background-color: #020617; color: #fff; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-    #recaptcha-container { margin: auto; min-height: 80px; display: flex; align-items: center; justify-content: center; }
-    h3 { margin-bottom: 20px; font-weight: bold; text-align: center; color: #fff; font-size: 16px; }
-    #status { margin-top: 15px; font-size: 12px; color: #94a3b8; text-align: center; }
-  </style>
-</head>
-<body>
-  <h3 id="header-text">Verificando seguridad...</h3>
-  <div id="recaptcha-container"></div>
-  <div id="status">Cargando módulos de seguridad...</div>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDkXNCt7wCgpjew66EjbJ6jWR3SkpoE68g",
-      authDomain: "ruedaloapp-8db21.firebaseapp.com",
-      projectId: "ruedaloapp-8db21",
-      storageBucket: "ruedaloapp-8db21.firebasestorage.app",
-      messagingSenderId: "240937295240",
-      appId: "1:240937295240:web:7ed992d104198aee89ee3d"
-    };
-
-    let authInstance = null;
-    let confirmationResult = null;
-    let recaptchaVerifierInstance = null;
-
-    function sendToNative(data) {
-      if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
-        window.ReactNativeWebView.postMessage(JSON.stringify(data));
-      } else {
-        console.warn("ReactNativeWebView no detectado, reintentando...", data);
-        setTimeout(() => sendToNative(data), 250);
-      }
-    }
-
-    function serializeError(err) {
-      if (!err) return null;
-      return {
-        message: err.message || String(err),
-        code: err.code || err.errorCode || null,
-        name: err.name || null,
-        stack: err.stack || null
-      };
-    }
-
-    function updateStatus(text, header) {
-      document.getElementById("status").innerText = text;
-      if (header) {
-        document.getElementById("header-text").innerText = header;
-      }
-    }
-
-    // Inicializar todo al cargar la página
-    window.onload = function() {
-      try {
-        // Enviar diagnóstico previo
-        sendToNative({
-          action: "debug",
-          message: "Antes de firebase.initializeApp",
-          diagnostics: {
-            firebaseConfig: firebaseConfig,
-            typeofFirebase: typeof firebase,
-            appsLength: (typeof firebase !== "undefined" && firebase.apps) ? firebase.apps.length : null
-          }
-        });
-
-        // Ejecutar con try-catch dedicado
-        try {
-          firebase.initializeApp(firebaseConfig);
-        } catch (initErr) {
-          sendToNative({
-            action: "error",
-            message: "Error ejecutando firebase.initializeApp: " + initErr.message,
-            error: serializeError(initErr)
-          });
-        }
-
-        // Enviar diagnóstico posterior
-        sendToNative({
-          action: "debug",
-          message: "Después de inicializar Firebase",
-          diagnostics: {
-            appsLength: (typeof firebase !== "undefined" && firebase.apps) ? firebase.apps.length : null,
-            appOptions: (typeof firebase !== "undefined" && firebase.apps && firebase.apps.length > 0) ? firebase.app().options : null
-          }
-        });
-
-        authInstance = firebase.auth();
-        updateStatus("Iniciando verificador de reCAPTCHA...");
-
-        // Enviar diagnóstico antes de RecaptchaVerifier
-        sendToNative({
-          action: "debug",
-          message: "Antes de crear RecaptchaVerifier",
-          diagnostics: {
-            recaptchaVerifierExists: typeof firebase.auth.RecaptchaVerifier === "function"
-          }
-        });
-
-        recaptchaVerifierInstance = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-          size: 'normal',
-          callback: (response) => {
-            sendToNative({ action: "recaptchaSolved" });
-          },
-          'expired-callback': () => {
-            sendToNative({ action: "recaptchaExpired" });
-          }
-        });
-
-        recaptchaVerifierInstance.render().then((widgetId) => {
-          updateStatus("Por favor, resuelve el reCAPTCHA arriba.", "Verificación Requerida");
-          // Notificar a React Native que Firebase y reCAPTCHA están listos
-          sendToNative({ action: "ready" });
-        }).catch((err) => {
-          sendToNative({
-            action: "error",
-            message: "Error al renderizar reCAPTCHA: " + err.message,
-            error: serializeError(err)
-          });
-        });
-
-      } catch (err) {
-        sendToNative({
-          action: "error",
-          message: "Error de inicialización: " + err.message,
-          error: serializeError(err)
-        });
-      }
-    };
-
-    async function handleMessage(event) {
-      let data = {};
-      try {
-        data = JSON.parse(event.data);
-      } catch (e) {
-        return;
-      }
-
-      if (data.action === "sendOtp") {
-        try {
-          updateStatus("Solicitando envío de SMS...", "Enviando Código...");
-          confirmationResult = await authInstance.signInWithPhoneNumber(data.phone, recaptchaVerifierInstance);
-          updateStatus("Código SMS enviado correctamente.", "Código Enviado");
-          sendToNative({ action: "otpSent" });
-        } catch (err) {
-          updateStatus("Error: " + err.message, "Error al Enviar");
-          sendToNative({
-            action: "error",
-            message: err.message,
-            error: serializeError(err)
-          });
-        }
-      } else if (data.action === "verifyOtp") {
-        try {
-          if (!confirmationResult) {
-            sendToNative({ action: "error", message: "No hay sesión de SMS activa." });
-            return;
-          }
-          updateStatus("Verificando código de seguridad...", "Verificando...");
-          const userCredential = await confirmationResult.confirm(data.code);
-          const verifiedPhone = userCredential.user.phoneNumber;
-          updateStatus("Verificado correctamente.", "¡Éxito!");
-          sendToNative({ action: "verified", phone: verifiedPhone });
-        } catch (err) {
-          updateStatus("Código incorrecto o expirado.", "Verificación Fallida");
-          sendToNative({ action: "error", message: "Código inválido o expirado. Inténtalo de nuevo." });
-        }
-      }
-    }
-
-    // Escuchar mensajes de React Native (soporte Android e iOS)
-    window.addEventListener("message", handleMessage);
-    document.addEventListener("message", handleMessage);
-  </script>
-</body>
-</html>
-`;
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -225,11 +39,6 @@ export default function LoginScreen() {
   const [otpCode, setOtpCode] = useState("");
   const [confirmationResult, setConfirmationResult] = useState<any>(null);
 
-  // WebView Native Recaptcha States
-  const [recaptchaVisible, setRecaptchaVisible] = useState(false);
-  const [formattedPhoneState, setFormattedPhoneState] = useState("");
-  const webViewRef = useRef<WebView | null>(null);
-
   const onSendOtp = async () => {
     if (!phone.trim() || phone.length < 7) {
       toast("Ingresa un número de teléfono válido", "error");
@@ -244,7 +53,6 @@ export default function LoginScreen() {
         cleanPhone = cleanPhone.substring(1);
       }
       const formattedPhone = `+58${cleanPhone}`;
-      setFormattedPhoneState(formattedPhone);
       
       if (Platform.OS === 'web') {
         let recaptcha = (window as any).recaptchaVerifier;
@@ -267,101 +75,17 @@ export default function LoginScreen() {
         setOtpModal(true);
         toast("Código enviado por SMS real a tu teléfono", "success");
       } else {
-        // En Android/iOS nativo, abrimos el modal del WebView para resolver reCAPTCHA
-        setRecaptchaVisible(true);
+        // En Android/iOS nativo, utilizamos el SDK nativo directo de Firebase Auth sin WebView
+        const confirmResult = await nativeAuth().signInWithPhoneNumber(formattedPhone);
+        setConfirmationResult(confirmResult);
+        setLoading(false);
+        setOtpModal(true);
+        toast("Código enviado por SMS nativo a tu teléfono", "success");
       }
     } catch (e: any) {
       console.error("Firebase Auth Error:", e);
-      toast(`Error al enviar SMS real: ${e?.message ?? "Verifica tu configuración de Firebase"}`, "error");
+      toast(`Error al enviar SMS: ${e?.message ?? "Verifica tu configuración de Firebase"}`, "error");
       setLoading(false);
-    }
-  };
-
-  const handleWebViewMessage = async (event: any) => {
-    let data: any = {};
-    try {
-      data = JSON.parse(event.nativeEvent.data);
-    } catch (e) {
-      return;
-    }
-
-    if (data.action === "debug") {
-      console.log(`[WebView Debug] ${data.message}`);
-      console.log(data.diagnostics);
-      
-      const debugInfo = `Mensaje: ${data.message}\nDiagnósticos:\n${JSON.stringify(data.diagnostics, null, 2)}`;
-      Alert.alert("Diagnóstico WebView", debugInfo, [{ text: "Aceptar" }]);
-    } else if (data.action === "ready") {
-      // WebView está inicializado y reCAPTCHA listo en pantalla. Ahora enviamos el teléfono para gatillar el SMS.
-      webViewRef.current?.postMessage(JSON.stringify({ action: "sendOtp", phone: formattedPhoneState }));
-    } else if (data.action === "otpSent") {
-      setRecaptchaVisible(false);
-      setLoading(false);
-      setOtpModal(true);
-      toast("Código enviado por SMS real a tu teléfono", "success");
-    } else if (data.action === "verified") {
-      setOtpModal(false);
-      setLoading(true);
-      
-      // Llamar a /auth/phone-login
-      try {
-        const res = await api<any>("/auth/phone-login", {
-          method: "POST",
-          body: { phone: data.phone },
-          auth: false
-        });
-        
-        await setToken(res.access_token);
-        setUser(res.user);
-        toast(`¡Bienvenido de vuelta a Ruedalo!`, "success");
-        
-        if (res.user.role === "passenger") router.replace("/(passenger)");
-        else if (res.user.role === "driver") router.replace("/(driver)");
-        else router.replace("/(admin)");
-      } catch (apiErr: any) {
-        if (apiErr.status === 404) {
-          toast("Teléfono verificado. Por favor, completa tu registro.", "info");
-          router.push({
-            pathname: "/(auth)/register",
-            params: { phone: data.phone }
-          });
-        } else {
-          toast(apiErr?.message ?? "Error en el servidor de Ruedalo", "error");
-        }
-      } finally {
-        setLoading(false);
-      }
-    } else if (data.action === "error") {
-      setRecaptchaVisible(false);
-      setLoading(false);
-      
-      // Registrar todo detalladamente en la consola
-      console.log("=== WEBVIEW FIREBASE ERROR DATA ===");
-      console.log(data);
-      if (data.error) {
-        console.log("=== SERIALIZED ERROR ===");
-        console.log("Message:", data.error.message);
-        console.log("Code:", data.error.code);
-        console.log("Name:", data.error.name);
-        console.log("Stack:", data.error.stack);
-      }
-      if (data.diagnostics) {
-        console.log("=== ERROR DIAGNOSTICS ===");
-        console.log(data.diagnostics);
-      }
-
-      // Preparar string amigable de diagnóstico para mostrar en pantalla
-      let debugText = `Msg: ${data.message || "N/A"}\n\n`;
-      if (data.error) {
-        debugText += `Error: ${data.error.name || "Error"} (${data.error.code || "No Code"})\nDetail: ${data.error.message || "N/A"}\n`;
-        if (data.error.stack) {
-          debugText += `Stack: ${data.error.stack.substring(0, 150)}...\n`;
-        }
-      }
-      
-      // Mostrar alerta visual directa en la pantalla del APK
-      Alert.alert("Error de Autenticación", debugText, [{ text: "Entendido" }]);
-      toast(`Error en autenticación: ${data.message}`, "error");
     }
   };
 
@@ -371,52 +95,54 @@ export default function LoginScreen() {
       return;
     }
 
-    if (Platform.OS === 'web' && confirmationResult) {
-      try {
-        setLoading(true);
-        
+    setLoading(true);
+    try {
+      let verifiedPhone = "";
+      if (Platform.OS === 'web' && confirmationResult) {
         const userCredential = await confirmationResult.confirm(otpCode);
-        const verifiedPhone = userCredential.user.phoneNumber; // ej: +584141234567
-        
-        // Llamar a /auth/phone-login
-        try {
-          const res = await api<any>("/auth/phone-login", {
-            method: "POST",
-            body: { phone: verifiedPhone },
-            auth: false
-          });
-          
-          await setToken(res.access_token);
-          setUser(res.user);
-          toast(`¡Bienvenido de vuelta a Ruedalo!`, "success");
-          setOtpModal(false);
-          
-          if (res.user.role === "passenger") router.replace("/(passenger)");
-          else if (res.user.role === "driver") router.replace("/(driver)");
-          else router.replace("/(admin)");
-        } catch (apiErr: any) {
-          if (apiErr.status === 404) {
-            toast("Teléfono verificado. Por favor, completa tu registro.", "info");
-            setOtpModal(false);
-            router.push({
-              pathname: "/(auth)/register",
-              params: { phone: verifiedPhone }
-            });
-          } else {
-            toast(apiErr?.message ?? "Error en el servidor de Ruedalo", "error");
-          }
-        }
-      } catch (e: any) {
-        toast(`Código de verificación inválido: ${e?.message}`, "error");
-      } finally {
+        verifiedPhone = userCredential.user.phoneNumber;
+      } else if (Platform.OS !== 'web' && confirmationResult) {
+        // En Android/iOS nativo, usamos el método confirm nativo del SDK de Firebase
+        const userCredential = await confirmationResult.confirm(otpCode);
+        verifiedPhone = userCredential.user.phoneNumber;
+      } else {
+        toast("No hay sesión de SMS activa.", "error");
         setLoading(false);
+        return;
       }
-    } else if (Platform.OS !== 'web' && webViewRef.current) {
-      // En dispositivos nativos, enviamos el código ingresado para ser verificado en el WebView
-      setLoading(true);
-      webViewRef.current.postMessage(JSON.stringify({ action: "verifyOtp", code: otpCode.trim() }));
-    } else {
-      toast("No se ha iniciado la verificación por SMS.", "error");
+
+      // Llamar a /auth/phone-login
+      try {
+        const res = await api<any>("/auth/phone-login", {
+          method: "POST",
+          body: { phone: verifiedPhone },
+          auth: false
+        });
+        
+        await setToken(res.access_token);
+        setUser(res.user);
+        toast(`¡Bienvenido de vuelta a Ruedalo!`, "success");
+        setOtpModal(false);
+        
+        if (res.user.role === "passenger") router.replace("/(passenger)");
+        else if (res.user.role === "driver") router.replace("/(driver)");
+        else router.replace("/(admin)");
+      } catch (apiErr: any) {
+        if (apiErr.status === 404) {
+          toast("Teléfono verificado. Por favor, completa tu registro.", "info");
+          setOtpModal(false);
+          router.push({
+            pathname: "/(auth)/register",
+            params: { phone: verifiedPhone }
+          });
+        } else {
+          toast(apiErr?.message ?? "Error en el servidor de Ruedalo", "error");
+        }
+      }
+    } catch (e: any) {
+      toast(`Código de verificación inválido: ${e?.message}`, "error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -656,24 +382,7 @@ export default function LoginScreen() {
           </View>
         </Modal>
 
-        {/* Native WebView reCAPTCHA Modal */}
-        <Modal visible={recaptchaVisible} animationType="slide" onRequestClose={() => { setRecaptchaVisible(false); setLoading(false); }}>
-          <SafeAreaView style={{ flex: 1, backgroundColor: "#020617" }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 16, borderBottomWidth: 1, borderBottomColor: "#1e293b" }}>
-              <Text style={{ color: "#fff", fontFamily: fonts.headingBold, fontSize: 18 }}>Verificación de Teléfono</Text>
-              <TouchableOpacity onPress={() => { setRecaptchaVisible(false); setLoading(false); }}>
-                <X size={26} color="#fff" />
-              </TouchableOpacity>
-            </View>
-            <WebView
-              ref={webViewRef}
-              source={{ html: WEBVIEW_HTML }}
-              onMessage={handleWebViewMessage}
-              javaScriptEnabled
-              style={{ flex: 1 }}
-            />
-          </SafeAreaView>
-        </Modal>
+
       </SafeAreaView>
     </>
   );
