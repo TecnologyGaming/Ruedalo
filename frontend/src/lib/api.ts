@@ -1,6 +1,6 @@
 import { storage } from "@/src/utils/storage";
 
-const BASE = (process.env.EXPO_PUBLIC_BACKEND_URL ?? "").replace(/\/+$/, "");
+const BASE = process.env.EXPO_PUBLIC_BACKEND_URL || "https://api.ruedalo.app";
 
 export class ApiError extends Error {
   status: number;
