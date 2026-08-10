@@ -535,79 +535,6 @@ async def seed_initial_data():
         })
         logger.info("Seeded bank config")
 
-async def complete_ride_internally(ride_id: str):
-    ride = await rides_col.find_one({"id": ride_id})
-    if not ride:
-        return
-    if ride["status"] not in ("accepted", "in_progress"):
-        return
-    price = float(ride["price_usd"])
-    driver_id = ride.get("driver_id")
-    if not driver_id:
-        return
-        
-    # debit passenger, credit driver
-    await users_col.update_one({"id": ride["passenger_id"]}, {"$inc": {"wallet_balance": -price}})
-    await users_col.update_one({"id": driver_id}, {"$inc": {"wallet_balance": price * 0.85}})
-    
-    await wallet_txns_col.insert_one({
-        "id": str(uuid.uuid4()),
-        "user_id": ride["passenger_id"],
-        "amount": -price,
-        "type": "ride_payment",
-        "ride_id": ride_id,
-        "description": f"Viaje a {ride['dest_address']}",
-        "created_at": utcnow_iso(),
-    })
-    await wallet_txns_col.insert_one({
-        "id": str(uuid.uuid4()),
-        "user_id": driver_id,
-        "amount": price * 0.85,
-        "type": "ride_earning",
-        "ride_id": ride_id,
-        "description": f"Ganancia viaje {ride['passenger_name']}",
-        "created_at": utcnow_iso(),
-    })
-    
-    # Core Referral and Streak Promotion Engines
-    passenger = await users_col.find_one({"id": ride["passenger_id"]})
-    if passenger:
-        current_count = int(passenger.get("completed_rides_count", 0))
-        new_count = current_count + 1
-        await users_col.update_one({"id": ride["passenger_id"]}, {"$set": {"completed_rides_count": new_count}})
-        
-        # 1. Referral Reward Rule: First ride completed! Owner of referral code receives $2.50
-        if current_count == 0 and passenger.get("referred_by"):
-            referrer_id = passenger["referred_by"]
-            await users_col.update_one({"id": referrer_id}, {"$inc": {"wallet_balance": 2.50}})
-            await wallet_txns_col.insert_one({
-                "id": str(uuid.uuid4()),
-                "user_id": referrer_id,
-                "amount": 2.50,
-                "type": "referral_bonus",
-                "ride_id": ride_id,
-                "description": f"Bono por referir a {passenger['name']}",
-                "created_at": utcnow_iso(),
-            })
-            
-        # 2. Promo Racha (Streak Promo): Completed 5 services! Passenger receives $2.00
-        if new_count == 5:
-            await users_col.update_one({"id": ride["passenger_id"]}, {"$inc": {"wallet_balance": 2.00}})
-            await wallet_txns_col.insert_one({
-                "id": str(uuid.uuid4()),
-                "user_id": ride["passenger_id"],
-                "amount": 2.00,
-                "type": "streak_bonus",
-                "ride_id": ride_id,
-                "description": "Bono Promo Racha (5 servicios)",
-                "created_at": utcnow_iso(),
-            })
-
-    await rides_col.update_one(
-        {"id": ride_id},
-        {"$set": {"status": "completed", "completed_at": utcnow_iso()}},
-    )
-
 async def simulate_bots_movement_loop():
     import random
     while True:
@@ -643,55 +570,6 @@ async def simulate_bots_movement_loop():
                             "is_online": True
                         }}
                     )
-                
-                # B. Automatically handle requested rides by matching with online bots
-                requested_rides = await rides_col.find({"status": "requested"}).to_list(50)
-                for r in requested_rides:
-                    # Choose a random available driver bot that does not have an active ride
-                    available_bots = []
-                    for d in drivers:
-                        active_ride = await rides_col.find_one({
-                            "driver_id": d["id"],
-                            "status": {"$in": ["accepted", "in_progress"]}
-                        })
-                        if not active_ride:
-                            available_bots.append(d)
-                    
-                    if available_bots:
-                        chosen_driver = random.choice(available_bots)
-                        # Auto-accept this ride
-                        await rides_col.update_one(
-                            {"id": r["id"]},
-                            {"$set": {
-                                "status": "accepted",
-                                "driver_id": chosen_driver["id"],
-                                "driver_name": chosen_driver["name"],
-                                "driver_phone": chosen_driver["phone"],
-                                "driver_lat": chosen_driver["lat"],
-                                "driver_lng": chosen_driver["lng"],
-                                "accepted_at": utcnow_iso(),
-                            }}
-                        )
-                        logger.info(f"Bot {chosen_driver['name']} accepted ride {r['id']}")
-                
-                # C. Automatically progress accepted rides to in_progress and then completed
-                accepted_rides = await rides_col.find({"status": "accepted"}).to_list(50)
-                for r in accepted_rides:
-                    # Check if chosen driver is a bot
-                    is_bot = await users_col.find_one({"id": r.get("driver_id"), "email": {"$in": seed_emails}})
-                    if is_bot:
-                        # Progress to in_progress (simulate trip started)
-                        await rides_col.update_one({"id": r["id"]}, {"$set": {"status": "in_progress"}})
-                        logger.info(f"Progressed ride {r['id']} to in_progress")
-                
-                in_progress_rides = await rides_col.find({"status": "in_progress"}).to_list(50)
-                for r in in_progress_rides:
-                    # Check if chosen driver is a bot
-                    is_bot = await users_col.find_one({"id": r.get("driver_id"), "email": {"$in": seed_emails}})
-                    if is_bot:
-                        # Progress to completed internally
-                        await complete_ride_internally(r["id"])
-                        logger.info(f"Completed ride {r['id']} internally")
             else:
                 # Turn off all bots
                 seed_emails = [d["email"] for d in SEED_DRIVERS] + ["conductor@rideve.com"]
