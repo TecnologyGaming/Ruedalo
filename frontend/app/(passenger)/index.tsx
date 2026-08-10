@@ -82,12 +82,19 @@ export default function PassengerHome() {
     })();
   }, []);
 
-  const loadDrivers = useCallback((lat: number, lng: number) => {
-    setDrivers([
-      { id: "d1", lat: lat + 0.002, lng: lng - 0.001, name: "Carlos M.", rating: 4.95 },
-      { id: "d2", lat: lat - 0.003, lng: lng + 0.002, name: "Andrea P.", rating: 4.88 },
-      { id: "d3", lat: lat + 0.001, lng: lng + 0.004, name: "José R.", rating: 4.91 },
-    ]);
+  const loadDrivers = useCallback(async (lat: number, lng: number) => {
+    try {
+      const res = await api<any[]>(`/drivers/nearby?lat=${lat}&lng=${lng}`);
+      setDrivers(res.map(d => ({
+        id: d.id,
+        lat: d.lat,
+        lng: d.lng,
+        name: d.name,
+        rating: d.rating_avg || 5.0
+      })));
+    } catch {
+      setDrivers([]);
+    }
   }, []);
 
   useFocusEffect(useCallback(() => {
@@ -136,13 +143,33 @@ export default function PassengerHome() {
     }
     
     setConfirming(true);
-    setTimeout(() => {
-      setConfirming(false);
+    try {
+      // Real request to the backend API!
+      const ride = await api<any>("/rides/request", {
+        method: "POST",
+        body: {
+          origin_lat: myLoc.lat,
+          origin_lng: myLoc.lng,
+          origin_address: "Mi ubicación actual",
+          dest_lat: destination.lat,
+          dest_lng: destination.lng,
+          dest_address: destination.name,
+          price_usd: finalPrice,
+          distance_km: estimate.distance_km,
+          duration_min: estimate.duration_min
+        }
+      });
+      
       toast(`Buscando conductor de ${selectedService.toUpperCase()}...`, "success");
       setTimeout(() => {
-        router.push("/ride/demo-ride-123");
+        setConfirming(false);
+        // Redirect to the actual requested ride page in real-time!
+        router.push(`/ride/${ride.id}`);
       }, 1500);
-    }, 1800);
+    } catch (e: any) {
+      toast(e?.message ?? "Error al solicitar viaje", "error");
+      setConfirming(false);
+    }
   };
 
   const saveCedulaFromChecklist = () => {

@@ -11,6 +11,7 @@ import { colors, fonts, radii, spacing, shadows } from "@/src/lib/theme";
 import { RideMap, MarkerData } from "@/src/components/RideMap";
 import { NeonButton } from "@/src/components/NeonButton";
 import { toast } from "@/src/components/Toast";
+import { playSound } from "@/src/utils/sound";
 
 const CARACAS = { lat: 10.4998, lng: -66.8517 };
 
@@ -60,6 +61,12 @@ export default function DriverHome() {
   useEffect(() => {
     if (active) router.push(`/ride/${active.id}`);
   }, [active, router]);
+
+  useEffect(() => {
+    if (requests.length > 0) {
+      playSound("request");
+    }
+  }, [requests.length]);
 
   const toggleOnline = async (v: boolean) => {
     setOnline(v);

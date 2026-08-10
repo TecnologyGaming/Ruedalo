@@ -101,9 +101,13 @@ class UserOut(BaseModel):
     cedula: Optional[str] = None
     cedula_photo: Optional[str] = None
     is_verified: bool = False
+    vehicle_type: Optional[str] = None
+    vehicle_brand: Optional[str] = None
     vehicle_model: Optional[str] = None
     vehicle_year: Optional[str] = None
     plate: Optional[str] = None
+    passenger_capacity: Optional[int] = None
+    category: Optional[str] = None
     driver_status: Optional[str] = "none"
     profile_pic: Optional[str] = None
     emergency_contact_name: Optional[str] = None
@@ -121,9 +125,13 @@ class ProfileUpdateIn(BaseModel):
     emergency_contact_phone: Optional[str] = None
 
 class DriverRegisterIn(BaseModel):
+    vehicle_type: str
+    vehicle_brand: str
     vehicle_model: str
     vehicle_year: str
     plate: str
+    passenger_capacity: Optional[int] = 1
+    category: Optional[str] = "economico"
     license_photo: Optional[str] = None
 
 class TokenOut(BaseModel):
@@ -295,9 +303,13 @@ def user_to_out(u: dict) -> UserOut:
         cedula=u.get("cedula"),
         cedula_photo=u.get("cedula_photo"),
         is_verified=bool(u.get("is_verified", False)),
+        vehicle_type=u.get("vehicle_type"),
+        vehicle_brand=u.get("vehicle_brand"),
         vehicle_model=u.get("vehicle_model"),
         vehicle_year=u.get("vehicle_year"),
         plate=u.get("plate"),
+        passenger_capacity=u.get("passenger_capacity"),
+        category=u.get("category"),
         driver_status=u.get("driver_status", "none"),
         profile_pic=u.get("profile_pic"),
         emergency_contact_name=u.get("emergency_contact_name"),
@@ -523,9 +535,178 @@ async def seed_initial_data():
         })
         logger.info("Seeded bank config")
 
+async def complete_ride_internally(ride_id: str):
+    ride = await rides_col.find_one({"id": ride_id})
+    if not ride:
+        return
+    if ride["status"] not in ("accepted", "in_progress"):
+        return
+    price = float(ride["price_usd"])
+    driver_id = ride.get("driver_id")
+    if not driver_id:
+        return
+        
+    # debit passenger, credit driver
+    await users_col.update_one({"id": ride["passenger_id"]}, {"$inc": {"wallet_balance": -price}})
+    await users_col.update_one({"id": driver_id}, {"$inc": {"wallet_balance": price * 0.85}})
+    
+    await wallet_txns_col.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": ride["passenger_id"],
+        "amount": -price,
+        "type": "ride_payment",
+        "ride_id": ride_id,
+        "description": f"Viaje a {ride['dest_address']}",
+        "created_at": utcnow_iso(),
+    })
+    await wallet_txns_col.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": driver_id,
+        "amount": price * 0.85,
+        "type": "ride_earning",
+        "ride_id": ride_id,
+        "description": f"Ganancia viaje {ride['passenger_name']}",
+        "created_at": utcnow_iso(),
+    })
+    
+    # Core Referral and Streak Promotion Engines
+    passenger = await users_col.find_one({"id": ride["passenger_id"]})
+    if passenger:
+        current_count = int(passenger.get("completed_rides_count", 0))
+        new_count = current_count + 1
+        await users_col.update_one({"id": ride["passenger_id"]}, {"$set": {"completed_rides_count": new_count}})
+        
+        # 1. Referral Reward Rule: First ride completed! Owner of referral code receives $2.50
+        if current_count == 0 and passenger.get("referred_by"):
+            referrer_id = passenger["referred_by"]
+            await users_col.update_one({"id": referrer_id}, {"$inc": {"wallet_balance": 2.50}})
+            await wallet_txns_col.insert_one({
+                "id": str(uuid.uuid4()),
+                "user_id": referrer_id,
+                "amount": 2.50,
+                "type": "referral_bonus",
+                "ride_id": ride_id,
+                "description": f"Bono por referir a {passenger['name']}",
+                "created_at": utcnow_iso(),
+            })
+            
+        # 2. Promo Racha (Streak Promo): Completed 5 services! Passenger receives $2.00
+        if new_count == 5:
+            await users_col.update_one({"id": ride["passenger_id"]}, {"$inc": {"wallet_balance": 2.00}})
+            await wallet_txns_col.insert_one({
+                "id": str(uuid.uuid4()),
+                "user_id": ride["passenger_id"],
+                "amount": 2.00,
+                "type": "streak_bonus",
+                "ride_id": ride_id,
+                "description": "Bono Promo Racha (5 servicios)",
+                "created_at": utcnow_iso(),
+            })
+
+    await rides_col.update_one(
+        {"id": ride_id},
+        {"$set": {"status": "completed", "completed_at": utcnow_iso()}},
+    )
+
+async def simulate_bots_movement_loop():
+    import random
+    while True:
+        try:
+            config = await config_col.find_one({"_id": "bots"})
+            enabled = config.get("enabled", True) if config else True
+            
+            if enabled:
+                # A. Move online driver bots
+                seed_emails = [d["email"] for d in SEED_DRIVERS] + ["conductor@rideve.com"]
+                drivers = await users_col.find({"email": {"$in": seed_emails}}).to_list(100)
+                
+                for d in drivers:
+                    lat_offset = (random.random() - 0.5) * 0.001
+                    lng_offset = (random.random() - 0.5) * 0.001
+                    current_lat = d.get("lat") or 10.4998
+                    current_lng = d.get("lng") or -66.8517
+                    
+                    new_lat = current_lat + lat_offset
+                    new_lng = current_lng + lng_offset
+                    
+                    # keep within Caracas limits
+                    if abs(new_lat - 10.4998) > 0.05:
+                        new_lat = 10.4998 + (random.random() - 0.5) * 0.01
+                    if abs(new_lng - -66.8517) > 0.05:
+                        new_lng = -66.8517 + (random.random() - 0.5) * 0.01
+                        
+                    await users_col.update_one(
+                        {"id": d["id"]},
+                        {"$set": {
+                            "lat": new_lat,
+                            "lng": new_lng,
+                            "is_online": True
+                        }}
+                    )
+                
+                # B. Automatically handle requested rides by matching with online bots
+                requested_rides = await rides_col.find({"status": "requested"}).to_list(50)
+                for r in requested_rides:
+                    # Choose a random available driver bot that does not have an active ride
+                    available_bots = []
+                    for d in drivers:
+                        active_ride = await rides_col.find_one({
+                            "driver_id": d["id"],
+                            "status": {"$in": ["accepted", "in_progress"]}
+                        })
+                        if not active_ride:
+                            available_bots.append(d)
+                    
+                    if available_bots:
+                        chosen_driver = random.choice(available_bots)
+                        # Auto-accept this ride
+                        await rides_col.update_one(
+                            {"id": r["id"]},
+                            {"$set": {
+                                "status": "accepted",
+                                "driver_id": chosen_driver["id"],
+                                "driver_name": chosen_driver["name"],
+                                "driver_phone": chosen_driver["phone"],
+                                "driver_lat": chosen_driver["lat"],
+                                "driver_lng": chosen_driver["lng"],
+                                "accepted_at": utcnow_iso(),
+                            }}
+                        )
+                        logger.info(f"Bot {chosen_driver['name']} accepted ride {r['id']}")
+                
+                # C. Automatically progress accepted rides to in_progress and then completed
+                accepted_rides = await rides_col.find({"status": "accepted"}).to_list(50)
+                for r in accepted_rides:
+                    # Check if chosen driver is a bot
+                    is_bot = await users_col.find_one({"id": r.get("driver_id"), "email": {"$in": seed_emails}})
+                    if is_bot:
+                        # Progress to in_progress (simulate trip started)
+                        await rides_col.update_one({"id": r["id"]}, {"$set": {"status": "in_progress"}})
+                        logger.info(f"Progressed ride {r['id']} to in_progress")
+                
+                in_progress_rides = await rides_col.find({"status": "in_progress"}).to_list(50)
+                for r in in_progress_rides:
+                    # Check if chosen driver is a bot
+                    is_bot = await users_col.find_one({"id": r.get("driver_id"), "email": {"$in": seed_emails}})
+                    if is_bot:
+                        # Progress to completed internally
+                        await complete_ride_internally(r["id"])
+                        logger.info(f"Completed ride {r['id']} internally")
+            else:
+                # Turn off all bots
+                seed_emails = [d["email"] for d in SEED_DRIVERS] + ["conductor@rideve.com"]
+                await users_col.update_many(
+                    {"email": {"$in": seed_emails}},
+                    {"$set": {"is_online": False}}
+                )
+        except Exception as e:
+            logger.error(f"Error in bots simulation loop: {e}")
+        await asyncio.sleep(5)
+
 @app.on_event("startup")
 async def on_startup():
     await seed_initial_data()
+    asyncio.create_task(simulate_bots_movement_loop())
 
 @app.on_event("shutdown")
 async def on_shutdown():
@@ -660,9 +841,13 @@ async def update_profile(body: ProfileUpdateIn, user=Depends(get_current_user)):
 @api.post("/users/register_driver", response_model=UserOut)
 async def register_driver(body: DriverRegisterIn, user=Depends(get_current_user)):
     upd = {
+        "vehicle_type": body.vehicle_type,
+        "vehicle_brand": body.vehicle_brand,
         "vehicle_model": body.vehicle_model,
         "vehicle_year": body.vehicle_year,
         "plate": body.plate,
+        "passenger_capacity": body.passenger_capacity,
+        "category": body.category,
         "driver_status": "pending",  # awaiting admin approval
     }
     await users_col.update_one({"id": user["id"]}, {"$set": upd})
@@ -1124,6 +1309,32 @@ async def admin_stats(_=Depends(require_roles("admin"))):
     total_rides = await rides_col.count_documents({})
     completed_rides = await rides_col.count_documents({"status": "completed"})
     pending_recharges = await recharges_col.count_documents({"status": "pending"})
+
+    # Balance Financiero real
+    now = datetime.now(timezone.utc)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
+    
+    today_rides = await rides_col.find({
+        "status": "completed",
+        "completed_at": {"$gte": today_start}
+    }).to_list(1000)
+    
+    month_rides = await rides_col.find({
+        "status": "completed",
+        "completed_at": {"$gte": month_start}
+    }).to_list(5000)
+
+    gross_today = sum(float(r.get("price_usd", 0)) for r in today_rides)
+    commission_today = gross_today * 0.15
+    driver_today = gross_today * 0.85
+    avg_today = gross_today / len(today_rides) if today_rides else 0.0
+
+    gross_month = sum(float(r.get("price_usd", 0)) for r in month_rides)
+    commission_month = gross_month * 0.15
+    driver_month = gross_month * 0.85
+    avg_month = gross_month / len(month_rides) if month_rides else 0.0
+
     return {
         "total_users": total_users,
         "total_drivers": total_drivers,
@@ -1132,6 +1343,22 @@ async def admin_stats(_=Depends(require_roles("admin"))):
         "total_rides": total_rides,
         "completed_rides": completed_rides,
         "pending_recharges": pending_recharges,
+        "income": {
+            "today": {
+                "rides_count": len(today_rides),
+                "gross": round(gross_today, 2),
+                "commission": round(commission_today, 2),
+                "driver_amount": round(driver_today, 2),
+                "average": round(avg_today, 2)
+            },
+            "month": {
+                "rides_count": len(month_rides),
+                "gross": round(gross_month, 2),
+                "commission": round(commission_month, 2),
+                "driver_amount": round(driver_month, 2),
+                "average": round(avg_month, 2)
+            }
+        }
     }
 
 @api.get("/admin/drivers/pending")
@@ -1294,7 +1521,31 @@ async def admin_send_push_notification(body: PushNotificationIn, _=Depends(requi
         "created_at": utcnow_iso()
     }
     await notifications_col.insert_one(doc)
-    return {"success": True, "message": "Notificación enviada con éxito"}
+    
+    # Calculate sent and not available counts robustly
+    if body.target == "all":
+        sent = await users_col.count_documents({})
+        not_available = 0
+    elif body.target == "drivers":
+        sent = await users_col.count_documents({"role": "driver"})
+        not_available = 0
+    elif body.target == "passengers":
+        sent = await users_col.count_documents({"role": "passenger"})
+        not_available = 0
+    elif body.target == "individual":
+        user_exists = await users_col.find_one({"id": body.user_id})
+        sent = 1 if user_exists else 0
+        not_available = 0 if user_exists else 1
+    else:
+        sent = 0
+        not_available = 0
+
+    return {
+        "success": True, 
+        "message": "Notificación enviada con éxito",
+        "sent_count": sent,
+        "not_available_count": not_available
+    }
 
 @api.get("/notifications")
 async def get_user_notifications(user=Depends(get_current_user)):

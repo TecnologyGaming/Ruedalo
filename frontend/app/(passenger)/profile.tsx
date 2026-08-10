@@ -22,9 +22,13 @@ export function ProfileScreen() {
   
   // Driver registration modal
   const [driverModal, setDriverModal] = useState(false);
+  const [vehicleType, setVehicleType] = useState<"automobile" | "moto">("automobile");
+  const [vehicleBrand, setVehicleBrand] = useState("");
   const [vehicleModel, setVehicleModel] = useState("");
   const [vehicleYear, setVehicleYear] = useState("");
   const [plate, setPlate] = useState("");
+  const [passengerCapacity, setPassengerCapacity] = useState("4");
+  const [category, setCategory] = useState<"moto" | "economico" | "confort" | "xl">("economico");
   const [registering, setRegistering] = useState(false);
 
   const onLogout = async () => {
@@ -60,7 +64,7 @@ export function ProfileScreen() {
   };
 
   const registerAsDriver = async () => {
-    if (!vehicleModel.trim() || !vehicleYear.trim() || !plate.trim()) {
+    if (!vehicleModel.trim() || !vehicleYear.trim() || !plate.trim() || !vehicleBrand.trim()) {
       toast("Completa todos los datos del vehículo", "error");
       return;
     }
@@ -68,7 +72,15 @@ export function ProfileScreen() {
     try {
       const u = await api<any>("/users/register_driver", {
         method: "POST",
-        body: { vehicle_model: vehicleModel.trim(), vehicle_year: vehicleYear.trim(), plate: plate.trim() }
+        body: {
+          vehicle_type: vehicleType,
+          vehicle_brand: vehicleBrand.trim(),
+          vehicle_model: vehicleModel.trim(),
+          vehicle_year: vehicleYear.trim(),
+          plate: plate.trim(),
+          passenger_capacity: parseInt(passengerCapacity) || 1,
+          category: category
+        }
       });
       setUser(u);
       setDriverModal(false);
@@ -241,11 +253,36 @@ export function ProfileScreen() {
               <Text style={styles.modalSubtitle}>Socio de Conducción en Venezuela</Text>
               <Text style={styles.modalDesc}>Por favor, ingresa los datos de tu vehículo (carro o moto) para enviar tu postulación de socio conductor.</Text>
 
+              {/* TIPO DE VEHÍCULO SELECTION */}
+              <Text style={{ fontSize: 12, fontFamily: fonts.bodyBold, color: colors.textSecondary, textTransform: "uppercase", letterSpacing: 1.2, marginTop: 4 }}>Tipo de Vehículo</Text>
+              <div style={{ flexDirection: "row", gap: 10, marginBottom: 4, display: "flex" }}>
+                <TouchableOpacity 
+                  onPress={() => { setVehicleType("automobile"); setCategory("economico"); setPassengerCapacity("4"); }}
+                  style={{ flex: 1, height: 42, borderRadius: radii.md, backgroundColor: vehicleType === "automobile" ? colors.primary : colors.elevated, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border }}
+                >
+                  <Text style={{ color: vehicleType === "automobile" ? "#fff" : colors.textPrimary, fontFamily: fonts.bodyBold, fontSize: 13 }}>🚗 Automóvil</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  onPress={() => { setVehicleType("moto"); setCategory("moto"); setPassengerCapacity("1"); }}
+                  style={{ flex: 1, height: 42, borderRadius: radii.md, backgroundColor: vehicleType === "moto" ? colors.primary : colors.elevated, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border }}
+                >
+                  <Text style={{ color: vehicleType === "moto" ? "#fff" : colors.textPrimary, fontFamily: fonts.bodyBold, fontSize: 13 }}>🏍️ Moto</Text>
+                </TouchableOpacity>
+              </div>
+
               <FieldInput 
-                label="Marca y Modelo del Vehículo" 
+                label="Marca del Vehículo" 
+                value={vehicleBrand} 
+                onChangeText={setVehicleBrand} 
+                placeholder="Ej: Toyota / Suzuki" 
+                testID="vehicle-brand-input"
+              />
+
+              <FieldInput 
+                label="Modelo del Vehículo" 
                 value={vehicleModel} 
                 onChangeText={setVehicleModel} 
-                placeholder="Ej: Toyota Corolla / Suzuki Moto" 
+                placeholder="Ej: Corolla / V-Strom" 
                 testID="vehicle-model-input"
               />
               
@@ -266,6 +303,33 @@ export function ProfileScreen() {
                 autoCapitalize="characters"
                 testID="vehicle-plate-input"
               />
+
+              {vehicleType === "automobile" ? (
+                <>
+                  <FieldInput 
+                    label="Capacidad de pasajeros" 
+                    value={passengerCapacity} 
+                    onChangeText={setPassengerCapacity} 
+                    placeholder="Ej: 4" 
+                    keyboardType="number-pad" 
+                    testID="vehicle-capacity-input"
+                  />
+
+                  {/* CATEGORY SELECTOR FOR CARS */}
+                  <Text style={{ fontSize: 12, fontFamily: fonts.bodyBold, color: colors.textSecondary, textTransform: "uppercase", letterSpacing: 1.2, marginTop: 4 }}>Categoría de Servicio</Text>
+                  <div style={{ flexDirection: "row", gap: 8, marginBottom: 4, display: "flex" }}>
+                    {(["economico", "confort", "xl"] as const).map((cat) => (
+                      <TouchableOpacity 
+                        key={cat}
+                        onPress={() => setCategory(cat)}
+                        style={{ flex: 1, height: 38, borderRadius: radii.sm, backgroundColor: category === cat ? colors.secondary : colors.elevated, alignItems: "center", justifyContent: "center" }}
+                      >
+                        <Text style={{ color: category === cat ? "#fff" : colors.textPrimary, fontFamily: fonts.bodyBold, fontSize: 12, textTransform: "capitalize" }}>{cat}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </div>
+                </>
+              ) : null}
 
               <View style={styles.termsBox}>
                 <Check size={14} color={colors.secondary} />

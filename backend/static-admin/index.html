@@ -183,6 +183,64 @@
                             </div>
                         </div>
 
+                        <!-- Income Stats Section -->
+                        <div class="flex flex-col gap-1 pt-4">
+                            <h2 class="text-xl font-bold text-white">Balance Financiero e Ingresos</h2>
+                            <p class="text-sm text-slate-400">Monitoreo en tiempo real de ingresos brutos, comisiones de Ruedalo (15%) y ganancias de conductores (85%)</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Hoy -->
+                            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                                <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                                    <h3 class="text-md font-bold text-emerald-400 flex items-center gap-2">
+                                        <i data-lucide="trending-up" class="w-5 h-5"></i> Ingresos de Hoy (24h)
+                                    </h3>
+                                    <span class="text-xs bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-full font-semibold" id="income-today-count">0 viajes</span>
+                                </div>
+                                <div class="grid grid-cols-3 gap-4 text-center">
+                                    <div class="flex flex-col">
+                                        <span class="text-xs text-slate-400">Total Bruto</span>
+                                        <span class="text-xl font-bold text-white mt-1" id="income-today-gross">$0.00</span>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="text-xs text-slate-400">Comisión Ruedalo</span>
+                                        <span class="text-xl font-bold text-brand-500 mt-1" id="income-today-commission">$0.00</span>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="text-xs text-slate-400">Conductor</span>
+                                        <span class="text-xl font-bold text-emerald-500 mt-1" id="income-today-driver">$0.00</span>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-slate-500 text-center" id="income-today-avg">Promedio por viaje: $0.00</p>
+                            </div>
+
+                            <!-- Mes -->
+                            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                                <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                                    <h3 class="text-md font-bold text-indigo-400 flex items-center gap-2">
+                                        <i data-lucide="calendar" class="w-5 h-5"></i> Ingresos del Mes (Acumulado)
+                                    </h3>
+                                    <span class="text-xs bg-indigo-500/10 text-indigo-400 px-2.5 py-1 rounded-full font-semibold" id="income-month-count">0 viajes</span>
+                                </div>
+                                <div class="grid grid-cols-3 gap-4 text-center">
+                                    <div class="flex flex-col">
+                                        <span class="text-xs text-slate-400">Total Bruto</span>
+                                        <span class="text-xl font-bold text-white mt-1" id="income-month-gross">$0.00</span>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="text-xs text-slate-400">Comisión Ruedalo</span>
+                                        <span class="text-xl font-bold text-brand-500 mt-1" id="income-month-commission">$0.00</span>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="text-xs text-slate-400">Conductor</span>
+                                        <span class="text-xl font-bold text-emerald-500 mt-1" id="income-month-driver">$0.00</span>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-slate-500 text-center" id="income-month-avg">Promedio por viaje: $0.00</p>
+                            </div>
+                        </div>
+
                         <!-- Quick Action / Alert Banner -->
                         <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 flex items-center justify-between gap-4">
                             <div class="flex gap-3 items-center">
@@ -747,6 +805,21 @@
         }
 
         // Load 🗺️ Map Tab with Leaflet
+        // Maintain a persistent cache of driver markers to avoid map flickers
+        window.driverMarkers = window.driverMarkers || {};
+
+        // Helper to calculate heading angle (bearing) between two locations
+        function getBearing(lat1, lon1, lat2, lon2) {
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const lat1Rad = lat1 * Math.PI / 180;
+            const lat2Rad = lat2 * Math.PI / 180;
+            const y = Math.sin(dLon) * Math.cos(lat2Rad);
+            const x = Math.cos(lat1Rad) * Math.sin(lat2Rad) - Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLon);
+            const brng = Math.atan2(y, x) * 180 / Math.PI;
+            return (brng + 360) % 360;
+        }
+
+        // Load 🗺️ Map Tab with Leaflet
         async function loadMap() {
             try {
                 const drivers = await req("/admin/drivers/locations");
@@ -760,42 +833,86 @@
                 if (!leafletMap) {
                     leafletMap = L.map('leaflet-map-canvas').setView([10.4998, -66.8517], 13);
                     
-                    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    // CARTO Voyager - Professional Light Map for logistics/mobility
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
                         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
                         subdomains: 'abcd',
                         maxZoom: 20
                     }).addTo(leafletMap);
-                    
-                    leafletMarkersGroup = L.layerGroup().addTo(leafletMap);
                 } else {
                     setTimeout(() => leafletMap.invalidateSize(), 100);
                 }
 
-                leafletMarkersGroup.clearLayers();
+                const currentIds = new Set(drivers.map(d => d.id));
+
+                // Remove markers of drivers that are no longer in the list
+                Object.keys(window.driverMarkers).forEach(id => {
+                    if (!currentIds.has(id)) {
+                        leafletMap.removeLayer(window.driverMarkers[id]);
+                        delete window.driverMarkers[id];
+                    }
+                });
 
                 drivers.forEach(d => {
                     const color = d.is_online ? "#10b981" : "#64748b";
-                    const fillColor = d.is_online ? "#34d399" : "#94a3b8";
                     
-                    const marker = L.circleMarker([d.lat, d.lng], {
-                        radius: 8,
-                        fillColor: fillColor,
-                        color: color,
-                        weight: 2,
-                        opacity: 1,
-                        fillOpacity: 0.8
+                    let heading = 0;
+                    let oldLatLng = null;
+
+                    // Check if marker already exists to calculate bearing and update smoothly
+                    if (window.driverMarkers[d.id]) {
+                        const marker = window.driverMarkers[d.id];
+                        oldLatLng = marker.getLatLng();
+                        if (oldLatLng.lat !== d.lat || oldLatLng.lng !== d.lng) {
+                            heading = getBearing(oldLatLng.lat, oldLatLng.lng, d.lat, d.lng);
+                            // Smoothly update position
+                            marker.setLatLng([d.lat, d.lng]);
+                        } else {
+                            heading = marker.options.heading || 0;
+                        }
+                    }
+
+                    // Create custom professional SVG car icon
+                    const carSvg = `
+                    <div style="transform: rotate(${heading}deg); transition: transform 0.4s ease, left 0.4s ease, top 0.4s ease; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px;">
+                        <svg viewBox="0 0 24 24" width="30" height="30" fill="${color}" stroke="#0f172a" stroke-width="1.8" style="filter: drop-shadow(0px 2px 5px rgba(15,23,42,0.45));">
+                            <!-- High fidelity top-down vehicle path shape -->
+                            <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
+                        </svg>
+                    </div>
+                    `;
+
+                    const carIcon = L.divIcon({
+                        html: carSvg,
+                        className: 'custom-car-marker-div',
+                        iconSize: [34, 34],
+                        iconAnchor: [17, 17],
+                        popupAnchor: [0, -17]
                     });
 
-                    const statusText = d.is_online ? "<span style='color: #10b981; font-weight: bold;'>● Online</span>" : "<span style='color: #64748b; font-weight: bold;'>○ Offline</span>";
-                    marker.bindPopup(`
-                        <div style="font-family: sans-serif; padding: 4px; color: #0f172a;">
-                            <h4 style="margin: 0 0 4px 0; font-weight: bold; font-size: 14px;">${d.name}</h4>
-                            <p style="margin: 0 0 4px 0; font-size: 12px; color: #475569;">Tel: ${d.phone}</p>
-                            <p style="margin: 0; font-size: 11px;">Estado: ${statusText}</p>
+                    const statusText = d.is_online ? "<span style='color: #10b981; font-weight: bold;'>● Conectado (Online)</span>" : "<span style='color: #64748b; font-weight: bold;'>○ Desconectado (Offline)</span>";
+                    const popupHtml = `
+                        <div style="font-family: sans-serif; padding: 6px; color: #0b132b; min-width: 140px;">
+                            <h4 style="margin: 0 0 6px 0; font-weight: bold; font-size: 13px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">🚗 ${d.name}</h4>
+                            <p style="margin: 0 0 4px 0; font-size: 11px; color: #475569;"><b>Teléfono:</b> ${d.phone}</p>
+                            <p style="margin: 0; font-size: 11px;"><b>Estado:</b> ${statusText}</p>
                         </div>
-                    `);
-                    
-                    leafletMarkersGroup.addLayer(marker);
+                    `;
+
+                    if (window.driverMarkers[d.id]) {
+                        const marker = window.driverMarkers[d.id];
+                        marker.setIcon(carIcon);
+                        marker.options.heading = heading;
+                        marker.getPopup().setContent(popupHtml);
+                    } else {
+                        const marker = L.marker([d.lat, d.lng], {
+                            icon: carIcon,
+                            heading: heading
+                        }).addTo(leafletMap);
+                        
+                        marker.bindPopup(popupHtml);
+                        window.driverMarkers[d.id] = marker;
+                    }
                 });
 
             } catch (err) {
@@ -815,6 +932,21 @@
                 const ratio = Math.round((s.total_passengers / Math.max(1, s.total_users)) * 100);
                 document.getElementById("stat-role-ratio").innerText = `${ratio}% Pasajeros · ${100-ratio}% Conductores`;
                 document.getElementById("stat-total-rides").innerText = `Total viajes registrados: ${s.total_rides}`;
+
+                // Populate real financial stats if they exist
+                if (s.income) {
+                    document.getElementById("income-today-count").innerText = `${s.income.today.rides_count} viajes`;
+                    document.getElementById("income-today-gross").innerText = `$${s.income.today.gross.toFixed(2)}`;
+                    document.getElementById("income-today-commission").innerText = `$${s.income.today.commission.toFixed(2)}`;
+                    document.getElementById("income-today-driver").innerText = `$${s.income.today.driver_amount.toFixed(2)}`;
+                    document.getElementById("income-today-avg").innerText = `Promedio por viaje: $${s.income.today.average.toFixed(2)}`;
+
+                    document.getElementById("income-month-count").innerText = `${s.income.month.rides_count} viajes`;
+                    document.getElementById("income-month-gross").innerText = `$${s.income.month.gross.toFixed(2)}`;
+                    document.getElementById("income-month-commission").innerText = `$${s.income.month.commission.toFixed(2)}`;
+                    document.getElementById("income-month-driver").innerText = `$${s.income.month.driver_amount.toFixed(2)}`;
+                    document.getElementById("income-month-avg").innerText = `Promedio por viaje: $${s.income.month.average.toFixed(2)}`;
+                }
             } catch {}
         }
 
@@ -1224,7 +1356,7 @@
             const userId = document.getElementById("n-user-id").value.trim();
 
             try {
-                await req("/admin/push", {
+                const res = await req("/admin/push", {
                     method: "POST",
                     body: {
                         title,
@@ -1233,7 +1365,8 @@
                         user_id: activePushTarget === "individual" ? userId : undefined
                     }
                 });
-                showToast("Notificación push masiva enviada con éxito", "success");
+                const successMsg = `Mensaje enviado. Enviados: ${res.sent_count}, No disponibles: ${res.not_available_count}`;
+                showToast(successMsg, "success");
                 document.getElementById("push-form").reset();
                 setPushSegment("all");
             } catch (err) {
